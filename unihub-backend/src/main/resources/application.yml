@@ -5,8 +5,19 @@ spring:
     password: {your_database_password}
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     show-sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: {MAIL_USERNAME}
+    password: {MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true  
 
 jwt:
   secret: "{your_secret_key}"

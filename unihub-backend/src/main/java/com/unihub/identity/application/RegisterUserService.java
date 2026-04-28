@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.unihub.identity.api.dto.RegisterReqeust;
 import com.unihub.identity.api.dto.RegisterResponse;
+import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
 import com.unihub.identity.domain.AuthProvider;
 import com.unihub.identity.domain.User;
 import com.unihub.identity.domain.UserRepository;
@@ -14,9 +15,11 @@ import com.unihub.shared.exception.ConflictException;
 
 import lombok.RequiredArgsConstructor;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 
@@ -26,6 +29,7 @@ public class RegisterUserService  implements RegisterUserUseCase {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;  
+    private final ApplicationEventPublisher eventPublisher;  
     
     
     @Override
@@ -60,6 +64,9 @@ public class RegisterUserService  implements RegisterUserUseCase {
 
         // Save
         userRepository.save(user);
+
+        String otp = generateOtp();
+        eventPublisher.publishEvent(new EmailVerificationRequestedEvent(user.getId(), user.getEmail(), otp));
         
         // Response
         return new RegisterResponse(
@@ -68,9 +75,13 @@ public class RegisterUserService  implements RegisterUserUseCase {
             user.getRole(),
             user.getStatus()
         );
+    }
 
-
-
+    private String generateOtp() {
+        SecureRandom random = new SecureRandom();
+        // Generate a 6-digit OTP
+        int otp = 100000 + random.nextInt(900000);
+        return String.valueOf(otp);
     }
 
 
