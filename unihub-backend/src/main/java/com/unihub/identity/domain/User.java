@@ -56,18 +56,22 @@ public class User {
 
     public void verifyEmail(){
         this.emailVerified = true;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void suspend(){
         this.status = UserStatus.SUSPENDED;
+        this.updatedAt = LocalDateTime.now();
     }    
 
     public void ban(){
         this.status = UserStatus.BANNED;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void activate(){
         this.status = UserStatus.ACTIVE;
+        this.updatedAt = LocalDateTime.now();
     }
 
 }

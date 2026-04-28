@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
 import com.unihub.identity.domain.EmailVerificationToken;
 import com.unihub.identity.domain.EmailVerificationTokenRepository;
+import com.unihub.shared.exception.BadRequestException;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

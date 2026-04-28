@@ -11,15 +11,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.unihub.identity.application.RegisterUserUseCase;
 import com.unihub.identity.application.ResendVerificationUseCase;
 import com.unihub.identity.application.VerifyEmailUseCase;
-import com.unihub.identity.domain.UserRepository;
-import com.unihub.shared.exception.UnauthorizedException;
 import com.unihub.identity.api.dto.LoginRequest;
 import com.unihub.identity.api.dto.LoginResponse;
-import com.unihub.identity.api.dto.RegisterReqeust;
+import com.unihub.identity.api.dto.RegisterRequest;
 import com.unihub.identity.api.dto.RegisterResponse;
 import com.unihub.identity.api.dto.ResendVerificationRequest;
 import com.unihub.identity.api.dto.UserResponse;
 import com.unihub.identity.api.dto.VerifyEmailRequest;
+import com.unihub.identity.application.GetCurrentUserUseCase;
 import com.unihub.identity.application.LoginUserUseCase;
 import org.springframework.security.core.Authentication;
 
@@ -35,7 +34,7 @@ public class AuthController {
     private final RegisterUserUseCase registerUserUseCase;
     private final VerifyEmailUseCase verifyEmailUseCase;
     private final ResendVerificationUseCase resendVerificationUseCase;
-    private final UserRepository userRepository;
+    private final GetCurrentUserUseCase getCurrentUserUseCase;
 
     @PostMapping("/login")
     public LoginResponse login(
@@ -45,7 +44,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public RegisterResponse register(
-            @Valid @RequestBody RegisterReqeust request) {
+            @Valid @RequestBody RegisterRequest request) {
         return registerUserUseCase.register(request);
     }
 
@@ -64,12 +63,7 @@ public class AuthController {
     @GetMapping("/me")
     public UserResponse me(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
-        return userRepository.findById(userId)
-                .map(user -> new UserResponse(
-                        user.getId(), user.getEmail(),
-                        user.getRole(), user.getStatus(),
-                        user.isEmailVerified()))
-                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        return getCurrentUserUseCase.getCurrentUser(userId);
     }
 
 }

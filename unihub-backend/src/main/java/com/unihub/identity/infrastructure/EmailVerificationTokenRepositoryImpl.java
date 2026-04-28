@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import com.unihub.identity.domain.EmailVerificationToken;
 import com.unihub.identity.domain.EmailVerificationTokenRepository;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Repository
