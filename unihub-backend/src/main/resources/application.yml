@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/{your_database_name}
+    username: {your_database_username}
+    password: {your_database_password}
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+
+jwt:
+  secret: "{your_secret_key}"
+  expiration: 86400000 # 1 day in milliseconds
