@@ -3,7 +3,7 @@ package com.unihub.identity.application;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.unihub.identity.api.dto.RegisterReqeust;
+import com.unihub.identity.api.dto.RegisterRequest;
 import com.unihub.identity.api.dto.RegisterResponse;
 import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
 import com.unihub.identity.domain.AuthProvider;
@@ -12,10 +12,10 @@ import com.unihub.identity.domain.UserRepository;
 import com.unihub.identity.domain.UserStatus;
 import com.unihub.shared.exception.BadRequestException;
 import com.unihub.shared.exception.ConflictException;
+import com.unihub.shared.util.OtpGenerator;
 
 import lombok.RequiredArgsConstructor;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -34,7 +34,7 @@ public class RegisterUserService  implements RegisterUserUseCase {
     
     @Override
     @Transactional
-    public RegisterResponse register(RegisterReqeust request) {
+    public RegisterResponse register(RegisterRequest request) {
        
         String email = request.email().trim().toLowerCase();
 
@@ -65,7 +65,7 @@ public class RegisterUserService  implements RegisterUserUseCase {
         // Save
         userRepository.save(user);
 
-        String otp = generateOtp();
+        String otp = OtpGenerator.generate();
         eventPublisher.publishEvent(new EmailVerificationRequestedEvent(user.getId(), user.getEmail(), otp));
         
         // Response
@@ -75,13 +75,6 @@ public class RegisterUserService  implements RegisterUserUseCase {
             user.getRole(),
             user.getStatus()
         );
-    }
-
-    private String generateOtp() {
-        SecureRandom random = new SecureRandom();
-        // Generate a 6-digit OTP
-        int otp = 100000 + random.nextInt(900000);
-        return String.valueOf(otp);
     }
 
 

@@ -6,6 +6,7 @@ import com.unihub.identity.domain.EmailVerificationTokenRepository;
 import com.unihub.identity.domain.User;
 import com.unihub.identity.domain.UserRepository;
 import com.unihub.shared.exception.BadRequestException;
+import com.unihub.shared.exception.NotFoundException;
 import com.unihub.shared.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -30,7 +31,7 @@ public class VerifyEmailService implements VerifyEmailUseCase {
 
         // Get user
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BadRequestException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         // Already verified
         if (user.isEmailVerified()) {
@@ -58,10 +59,10 @@ public class VerifyEmailService implements VerifyEmailUseCase {
 
         // Increment attempts before checking
         token.incrementAttempts();
-        tokenRepository.save(token);
 
         // Check OTP
         if (!passwordEncoder.matches(request.otp(), token.getOtpHash())) {
+            tokenRepository.save(token);
             throw new BadRequestException("Invalid verification code");
         }
 
