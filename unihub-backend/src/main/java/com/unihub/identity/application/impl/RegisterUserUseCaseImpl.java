@@ -9,6 +9,7 @@ import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
 import com.unihub.identity.application.usecase.RegisterUserUseCase;
 import com.unihub.identity.domain.enums.AuthProvider;
 import com.unihub.identity.domain.enums.UserStatus;
+import com.unihub.identity.domain.event.UserRegisteredEvent;
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.BadRequestException;
@@ -65,6 +66,7 @@ public class RegisterUserUseCaseImpl  implements RegisterUserUseCase {
 
         // Save
         userRepository.save(user);
+        eventPublisher.publishEvent(new UserRegisteredEvent(user.getId(), user.getRole()));
 
         String otp = OtpGenerator.generate();
         eventPublisher.publishEvent(new EmailVerificationRequestedEvent(user.getId(), user.getEmail(), otp));

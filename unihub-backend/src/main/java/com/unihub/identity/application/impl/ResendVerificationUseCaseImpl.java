@@ -4,6 +4,7 @@ package com.unihub.identity.application.impl;
 import java.time.LocalDateTime;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.unihub.identity.api.dto.ResendVerificationRequest;
 import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
@@ -25,6 +26,7 @@ public class ResendVerificationUseCaseImpl implements ResendVerificationUseCase 
     private final EmailVerificationTokenRepository tokenRepository;
 
     @Override
+    @Transactional
     public void resendVerification(ResendVerificationRequest request) {
 
         String email = request.email().trim().toLowerCase();

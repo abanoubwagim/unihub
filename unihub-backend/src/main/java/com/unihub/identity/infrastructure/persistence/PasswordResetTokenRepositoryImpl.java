@@ -36,7 +36,7 @@ public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepos
     @Override
     public Optional<PasswordResetToken> findByResetToken(String resetToken) {
 
-        return jpa.findByResetToken(resetToken);
+        return jpa.findByResetTokenHash(resetToken);
     }
 
 }

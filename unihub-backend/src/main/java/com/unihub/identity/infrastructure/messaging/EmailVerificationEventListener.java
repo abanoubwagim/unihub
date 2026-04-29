@@ -35,26 +35,30 @@ public class EmailVerificationEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleEmailVerification(EmailVerificationRequestedEvent event) {
 
-        // Delete old token if exists
-        tokenRepository.deleteByUserId(event.userId());
-
-        // Hash the OTP before saving
         String otpHash = passwordEncoder.encode(event.otp());
 
-        // Save new token
-        EmailVerificationToken token = EmailVerificationToken.builder()
-                .id(UUID.randomUUID())
-                .userId(event.userId())
-                .otpHash(otpHash)
-                .expiresAt(LocalDateTime.now().plusMinutes(5))
-                .used(false)
-                .attempts(0)
-                .createdAt(LocalDateTime.now())
-                .build();
+        // Update existing token or create new one
+        EmailVerificationToken token = tokenRepository.findByUserId(event.userId())
+                .map(existing -> EmailVerificationToken.builder()
+                        .id(existing.getId()) 
+                        .userId(existing.getUserId())
+                        .otpHash(otpHash)
+                        .expiresAt(LocalDateTime.now().plusMinutes(5))
+                        .used(false)
+                        .attempts(0)
+                        .createdAt(LocalDateTime.now())
+                        .build())
+                .orElseGet(() -> EmailVerificationToken.builder()
+                        .id(UUID.randomUUID())
+                        .userId(event.userId())
+                        .otpHash(otpHash)
+                        .expiresAt(LocalDateTime.now().plusMinutes(5))
+                        .used(false)
+                        .attempts(0)
+                        .createdAt(LocalDateTime.now())
+                        .build());
 
         tokenRepository.save(token);
-
-        // Send email
         sendVerificationEmail(event.email(), event.otp());
     }
 

@@ -61,7 +61,7 @@ public class PasswordResetToken {
 
     public void setResetToken(String resetToken) {
         this.resetTokenHash = resetToken;
-        this.resetTokenExpiresAt = LocalDateTime.now().plusMinutes(10);
+        this.resetTokenExpiresAt = LocalDateTime.now().plusMinutes(5);
     }
 
     public boolean isResetTokenExpired() {
