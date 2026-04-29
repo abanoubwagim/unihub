@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
 import com.unihub.identity.domain.EmailVerificationToken;
 import com.unihub.identity.domain.EmailVerificationTokenRepository;
+import com.unihub.shared.exception.BadRequestException;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -71,6 +72,7 @@ public class EmailVerificationEventListener {
 
                     This code expires in 5 minutes.
 
+                    If you did not create an account, please ignore this email.
                     """.formatted(otp));
             mailSender.send(message);
             log.info("Verification email sent to {}", email);

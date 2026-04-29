@@ -5,7 +5,6 @@ import com.unihub.identity.domain.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -34,11 +33,5 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public Optional<User> findById(UUID id) {
         return jpa.findById(id);
-    }
-
-    @Override
-    @Transactional
-    public void deleteById(UUID id) {
-        jpa.deleteById(id);
     }
 }
