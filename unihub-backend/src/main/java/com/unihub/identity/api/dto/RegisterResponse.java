@@ -2,8 +2,8 @@ package com.unihub.identity.api.dto;
 
 import java.util.UUID;
 
-import com.unihub.identity.domain.Role;
-import com.unihub.identity.domain.UserStatus;
+import com.unihub.identity.domain.enums.Role;
+import com.unihub.identity.domain.enums.UserStatus;
 
 public record RegisterResponse(
 

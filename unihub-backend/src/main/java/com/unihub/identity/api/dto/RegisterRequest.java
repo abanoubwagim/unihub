@@ -1,6 +1,6 @@
 package com.unihub.identity.api.dto;
 
-import com.unihub.identity.domain.Role;
+import com.unihub.identity.domain.enums.Role;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
