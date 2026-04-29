@@ -1,6 +1,7 @@
 package com.unihub.identity.domain;
 
 import java.util.Optional;
+import java.util.UUID;
 
 
 public interface UserRepository {
@@ -9,6 +10,7 @@ public interface UserRepository {
     User save(User user);
     Optional<User> findByEmail(String email);
     Optional<User> findById(java.util.UUID id);
+    void deleteById(UUID id);
     
 
     
