@@ -53,24 +53,28 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-
-    public void verifyEmail(){
+    public void verifyEmail() {
         this.emailVerified = true;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void suspend(){
+    public void suspend() {
         this.status = UserStatus.SUSPENDED;
         this.updatedAt = LocalDateTime.now();
-    }    
+    }
 
-    public void ban(){
+    public void ban() {
         this.status = UserStatus.BANNED;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void activate(){
+    public void activate() {
         this.status = UserStatus.ACTIVE;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void changePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
         this.updatedAt = LocalDateTime.now();
     }
 

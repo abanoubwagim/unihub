@@ -11,16 +11,23 @@ import org.springframework.web.bind.annotation.RestController;
 import com.unihub.identity.application.RegisterUserUseCase;
 import com.unihub.identity.application.ResendVerificationUseCase;
 import com.unihub.identity.application.VerifyEmailUseCase;
+import com.unihub.identity.application.VerifyResetOtpUseCase;
+import com.unihub.identity.api.dto.ForgotPasswordRequest;
 import com.unihub.identity.api.dto.LoginRequest;
 import com.unihub.identity.api.dto.LoginResponse;
 import com.unihub.identity.api.dto.RegisterRequest;
 import com.unihub.identity.api.dto.RegisterResponse;
 import com.unihub.identity.api.dto.ResendVerificationRequest;
+import com.unihub.identity.api.dto.ResetPasswordRequest;
 import com.unihub.identity.api.dto.UserResponse;
 import com.unihub.identity.api.dto.VerifyEmailRequest;
+import com.unihub.identity.api.dto.VerifyResetOtpRequest;
+import com.unihub.identity.api.dto.VerifyResetOtpResponse;
+import com.unihub.identity.application.ForgotPasswordUseCase;
 import com.unihub.identity.application.GetCurrentUserUseCase;
 import com.unihub.identity.application.LoginUserUseCase;
 import org.springframework.security.core.Authentication;
+import com.unihub.identity.application.ResetPasswordUseCase;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +42,9 @@ public class AuthController {
     private final VerifyEmailUseCase verifyEmailUseCase;
     private final ResendVerificationUseCase resendVerificationUseCase;
     private final GetCurrentUserUseCase getCurrentUserUseCase;
+    private final ForgotPasswordUseCase forgotPasswordUseCase;
+    private final ResetPasswordUseCase resetPasswordUseCase;
+    private final VerifyResetOtpUseCase verifyResetOtpUseCase;
 
     @PostMapping("/login")
     public LoginResponse login(
@@ -64,6 +74,23 @@ public class AuthController {
     public UserResponse me(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         return getCurrentUserUseCase.getCurrentUser(userId);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        forgotPasswordUseCase.forgotPassword(request);
+        return ResponseEntity.ok("If this email is registered, a reset code will be sent");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        resetPasswordUseCase.resetPassword(request);
+        return ResponseEntity.ok("Password reset successfully");
+    }
+
+    @PostMapping("/verify-reset-otp")
+    public VerifyResetOtpResponse verifyResetOtp(@Valid @RequestBody VerifyResetOtpRequest request) {
+        return verifyResetOtpUseCase.verifyResetOtp(request);
     }
 
 }
