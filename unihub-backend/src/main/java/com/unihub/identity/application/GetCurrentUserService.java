@@ -27,5 +27,4 @@ public class GetCurrentUserService implements GetCurrentUserUseCase {
                         user.isEmailVerified()))
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
     }
-
 }
