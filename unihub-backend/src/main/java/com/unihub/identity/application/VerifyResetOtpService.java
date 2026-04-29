@@ -59,7 +59,7 @@ public class VerifyResetOtpService implements VerifyResetOtpUseCase {
             throw new BadRequestException("Invalid reset code");
         }
 
-        // OTP صح — generate reset token
+        // OTP is correct — generate reset token
         String resetToken = UUID.randomUUID().toString();
         token.setResetToken(passwordEncoder.encode(resetToken));
         token.markUsed();

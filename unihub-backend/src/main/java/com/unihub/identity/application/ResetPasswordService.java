@@ -29,7 +29,7 @@ public class ResetPasswordService implements ResetPasswordUseCase {
             throw new BadRequestException("Passwords do not match");
         }
 
-        // ابحث عن الـ token بالـ resetToken
+        // Find the token using resetToken
         PasswordResetToken token = tokenRepository.findByResetToken(request.resetToken())
                 .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
 
@@ -43,7 +43,7 @@ public class ResetPasswordService implements ResetPasswordUseCase {
         user.changePassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
 
-        // امسح الـ token بعد الاستخدام
+        // Delete the token after use
         tokenRepository.deleteByUserId(token.getUserId());
     }
 }

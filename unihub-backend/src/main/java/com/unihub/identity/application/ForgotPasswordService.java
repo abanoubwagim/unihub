@@ -46,12 +46,13 @@ public class ForgotPasswordService implements ForgotPasswordUseCase {
                         if (existing.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(1))) {
                             throw new BadRequestException("Please wait before requesting a new code");
                         }
-                        // عدّل الموجود بدل ما تمسح وتعمل جديد
+                        // Edit the existing one instead of deleting and creating a new one
                         existing.resetFor(otpHash);
                         tokenRepository.save(existing);
                     },
                     () -> {
-                        // مفيش token — عمل جديد
+                        
+                        // No token — New work
                         PasswordResetToken token = PasswordResetToken.builder()
                                 .id(UUID.randomUUID())
                                 .userId(user.getId())
