@@ -3,9 +3,6 @@ package com.unihub.identity.application.impl;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +26,7 @@ public class ForgotPasswordUseCaseImpl implements ForgotPasswordUseCase {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JavaMailSender mailSender;
+    private final ForgotPasswordEmailSender emailSender;
 
     @Override
     @Transactional
@@ -66,29 +63,8 @@ public class ForgotPasswordUseCaseImpl implements ForgotPasswordUseCase {
                         tokenRepository.save(token);
                     });
 
-            sendResetEmail(email, otp);
+            // Delegate to separate 
+            emailSender.sendResetEmail(email, otp);
         });
-    }
-
-    @Async
-    protected void sendResetEmail(String email, String otp) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(email);
-            message.setSubject("UniHub — Reset Your Password");
-            message.setText("""
-                    You requested a password reset.
-
-                    Your reset code is: %s
-
-                    This code expires in 5 minutes.
-
-                    If you did not request this, please ignore this email.
-                    """.formatted(otp));
-            mailSender.send(message);
-            log.info("Password reset email sent to {}", email);
-        } catch (Exception e) {
-            log.error("Failed to send reset email to {}: {}", email, e.getMessage());
-        }
     }
 }

@@ -59,8 +59,8 @@ public class PasswordResetToken {
         this.attempts++;
     }
 
-    public void setResetToken(String resetToken) {
-        this.resetTokenHash = resetToken;
+    public void setResetToken(String resetTokenHash) {
+        this.resetTokenHash = resetTokenHash;
         this.resetTokenExpiresAt = LocalDateTime.now().plusMinutes(5);
     }
 

@@ -70,8 +70,11 @@ public class RegisterUserUseCaseImpl  implements RegisterUserUseCase {
 
         String otp = OtpGenerator.generate();
         eventPublisher.publishEvent(new EmailVerificationRequestedEvent(user.getId(), user.getEmail(), otp));
-        
-        // Response
+
+        // Notify other modules 
+        eventPublisher.publishEvent(new UserRegisteredEvent(user.getId(), user.getRole()));
+
+        // Response        
         return new RegisterResponse(
             user.getId(),
             user.getEmail(),
@@ -79,6 +82,4 @@ public class RegisterUserUseCaseImpl  implements RegisterUserUseCase {
             user.getStatus()
         );
     }
-
-
 }
