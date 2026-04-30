@@ -10,7 +10,7 @@ public interface PasswordResetTokenRepository {
 
     Optional<PasswordResetToken> findByUserId(UUID userId);
     
-    Optional<PasswordResetToken> findByResetToken(String resetToken);
+    Optional<PasswordResetToken> findByResetTokenHash(String resetToken);
     
     PasswordResetToken save(PasswordResetToken token);
     

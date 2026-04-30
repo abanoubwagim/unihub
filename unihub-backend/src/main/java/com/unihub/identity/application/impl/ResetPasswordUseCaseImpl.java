@@ -31,7 +31,7 @@ public class ResetPasswordUseCaseImpl implements ResetPasswordUseCase {
         }
 
         // Find the token using resetToken
-        PasswordResetToken token = tokenRepository.findByResetToken(request.resetToken())
+        PasswordResetToken token = tokenRepository.findByResetTokenHash(request.resetToken())
                 .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
 
         if (token.isResetTokenExpired()) {

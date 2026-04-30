@@ -61,11 +61,11 @@ public class VerifyResetOtpUseCaseImpl implements VerifyResetOtpUseCase {
         }
 
         // OTP is correct — generate reset token
-        String resetToken = UUID.randomUUID().toString();
-        token.setResetToken(passwordEncoder.encode(resetToken));
+        String plainResetToken = UUID.randomUUID().toString();
+        token.setResetToken(passwordEncoder.encode(plainResetToken));
         token.markUsed();
         tokenRepository.save(token);
 
-        return new VerifyResetOtpResponse(resetToken);
+        return new VerifyResetOtpResponse(plainResetToken);
     }
 }

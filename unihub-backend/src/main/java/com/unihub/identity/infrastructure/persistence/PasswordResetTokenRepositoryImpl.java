@@ -3,6 +3,7 @@ package com.unihub.identity.infrastructure.persistence;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepository {
 
     private final JpaPasswordResetTokenRepository jpa;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public Optional<PasswordResetToken> findByUserId(UUID userId) {
@@ -34,9 +36,15 @@ public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepos
     }
 
     @Override
-    public Optional<PasswordResetToken> findByResetToken(String resetToken) {
+    public Optional<PasswordResetToken> findByResetTokenHash(String plainResetToken) {
 
-        return jpa.findByResetToken(resetToken);
+        if(plainResetToken == null || plainResetToken.isBlank()) {
+            return Optional.empty();
+        }
+        return jpa.findAllByResetTokenHashIsNotNull()
+                .stream()
+                .filter(t -> passwordEncoder.matches(plainResetToken, t.getResetTokenHash()))
+                .findFirst();
     }
 
 }
