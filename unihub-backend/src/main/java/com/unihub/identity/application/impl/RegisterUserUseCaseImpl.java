@@ -66,6 +66,7 @@ public class RegisterUserUseCaseImpl  implements RegisterUserUseCase {
 
         // Save
         userRepository.save(user);
+        eventPublisher.publishEvent(new UserRegisteredEvent(user.getId(), user.getRole()));
 
         String otp = OtpGenerator.generate();
         eventPublisher.publishEvent(new EmailVerificationRequestedEvent(user.getId(), user.getEmail(), otp));
