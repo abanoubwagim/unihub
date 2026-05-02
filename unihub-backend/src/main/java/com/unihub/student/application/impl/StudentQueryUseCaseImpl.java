@@ -1,0 +1,168 @@
+package com.unihub.student.application.impl;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.unihub.shared.exception.NotFoundException;
+import com.unihub.student.api.dto.CertificationResponse;
+import com.unihub.student.api.dto.ExperienceResponse;
+import com.unihub.student.api.dto.GraduationCertResponse;
+import com.unihub.student.api.dto.ProjectResponse;
+import com.unihub.student.api.dto.StudentProfileResponse;
+import com.unihub.student.application.StudentProfileMapper;
+import com.unihub.student.application.usecase.StudentQueryUseCase;
+import com.unihub.student.domain.enums.GraduationCertificateStatus;
+import com.unihub.student.domain.model.StudentCertification;
+import com.unihub.student.domain.model.StudentExperience;
+import com.unihub.student.domain.model.StudentProject;
+import com.unihub.student.domain.repository.GraduationCertificateRepository;
+import com.unihub.student.domain.repository.StudentCertificationRepository;
+import com.unihub.student.domain.repository.StudentExperienceRepository;
+import com.unihub.student.domain.repository.StudentProfileRepository;
+import com.unihub.student.domain.repository.StudentProjectRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class StudentQueryUseCaseImpl implements StudentQueryUseCase {
+
+    private final StudentProfileRepository studentProfileRepository;
+    private final GraduationCertificateRepository gradCertRepo;
+    private final StudentExperienceRepository experienceRepository;
+    private final StudentProjectRepository projectRepository;
+    private final StudentCertificationRepository certificationRepository;
+    private final StudentProfileMapper mapper;
+
+    // Profile
+
+    public StudentProfileResponse getMyProfile(UUID userId) {
+        return studentProfileRepository.findByUserId(userId)
+                .map(mapper::toResponse)
+                .orElseThrow(() -> new NotFoundException("Student profile not found"));
+    }
+
+    public StudentProfileResponse getPublicProfile(UUID studentId) {
+        return studentProfileRepository.findById(studentId)
+                .map(mapper::toResponse)
+                .orElseThrow(() -> new NotFoundException("Student not found"));
+    }
+
+    public GraduationCertResponse getGradCertStatus(UUID userId) {
+        var profile = studentProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundException("Student profile not found"));
+
+        return gradCertRepo.findTopByStudentIdOrderByAttemptNumberDesc(profile.getId())
+                .map(cert -> new GraduationCertResponse(
+                        cert.getId(),
+                        cert.getStatus(),
+                        cert.getAttemptNumber(),
+                        cert.getRejectionReason()))
+                .orElse(new GraduationCertResponse(
+                    null,
+                    GraduationCertificateStatus.NOT_SUBMITTED,
+                    0,
+                    null
+                ));
+    }
+
+    // Experiences
+
+    public List<ExperienceResponse> getExperiences(UUID studentId) {
+        validateStudentExists(studentId);
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("startDate").descending());
+        return experienceRepository.findAllByStudent_Id(studentId, pageable)
+                .getContent()
+                .stream().map(this::mapExperience).toList();
+    }
+
+    public ExperienceResponse getExperience(UUID studentId, UUID experienceId) {
+
+        validateStudentExists(studentId);
+        return experienceRepository.findByIdAndStudent_Id(experienceId, studentId)
+                .map(this::mapExperience)
+                .orElseThrow(() -> new NotFoundException("Experience not found"));
+    }
+
+    // Projects
+
+    public List<ProjectResponse> getProjects(UUID studentId) {
+        validateStudentExists(studentId);
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("startDate").descending());
+        return projectRepository.findAllByStudent_Id(studentId, pageable)
+                .getContent()
+                .stream().map(this::mapProject).toList();
+    }
+
+    public ProjectResponse getProject(UUID studentId, UUID projectId) {
+        validateStudentExists(studentId);
+        return projectRepository.findByIdAndStudent_Id(projectId, studentId)
+                .map(this::mapProject)
+                .orElseThrow(() -> new NotFoundException("Project not found"));
+    }
+
+    // Certifications
+
+    public List<CertificationResponse> getCertifications(UUID studentId) {
+        validateStudentExists(studentId);
+        Pageable pageable = PageRequest.of(0, 20, Sort.by("dateIssued").descending());
+        return certificationRepository.findAllByStudent_Id(studentId, pageable)
+                .getContent()
+                .stream().map(this::mapCertification).toList();
+    }
+
+    public CertificationResponse getCertification(UUID studentId, UUID certId) {
+        validateStudentExists(studentId);
+        return certificationRepository.findByIdAndStudent_Id(certId, studentId)
+                .map(this::mapCertification)
+                .orElseThrow(() -> new NotFoundException("Certification not found"));
+    }
+
+    private void validateStudentExists(UUID studentId) {
+        if (!studentProfileRepository.existsById(studentId)) {
+            throw new NotFoundException("Student not found");
+        }
+    }
+
+    private ExperienceResponse mapExperience(StudentExperience exp) {
+        return new ExperienceResponse(
+                exp.getId(),
+                exp.getJobTitle(),
+                exp.getCompany(),
+                exp.getJobType(),
+                exp.getStartDate(),
+                exp.getEndDate(),
+                exp.isCurrent(),
+                exp.getLocation(),
+                exp.getDescription(),
+                exp.getSkills().stream().map(s -> s.getName()).toList());
+    }
+
+    private ProjectResponse mapProject(StudentProject p) {
+        return new ProjectResponse(
+                p.getId(),
+                p.getTitle(),
+                p.getDescription(),
+                p.getStartDate(),
+                p.getEndDate(),
+                p.getProjectLink(),
+                p.getSkills().stream().map(s -> s.getName()).toList());
+    }
+
+    private CertificationResponse mapCertification(StudentCertification c) {
+        return new CertificationResponse(
+                c.getId(),
+                c.getTitle(),
+                c.getIssuingOrganization(),
+                c.getDateIssued(),
+                c.getFileUrl());
+    }
+
+}
