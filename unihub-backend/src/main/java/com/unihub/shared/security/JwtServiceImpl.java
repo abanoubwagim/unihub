@@ -3,7 +3,6 @@ package com.unihub.shared.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -28,12 +27,12 @@ public class JwtServiceImpl implements JwtService {
     @Override
     public String generateToken(JwtSubject subject) {
         return Jwts.builder()
-                .subject(subject.id().toString())          
+                .subject(subject.id().toString())
                 .claim("email", subject.email())
                 .claim("role", subject.role())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(secretKey)                        
+                .signWith(secretKey)
                 .compact();
     }
 
@@ -56,9 +55,20 @@ public class JwtServiceImpl implements JwtService {
                 claims.get("role", String.class));
     }
 
+    @Override
+    public long getExpirationSeconds(String token) {
+        try {
+            Date expiration = extractAllClaims(token).getExpiration();
+            long remaining = expiration.getTime() - System.currentTimeMillis();
+            return remaining > 0 ? remaining / 1000 : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith(secretKey)                    
+                .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
