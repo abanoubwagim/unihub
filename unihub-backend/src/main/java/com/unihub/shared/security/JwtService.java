@@ -6,4 +6,6 @@ public interface JwtService {
     boolean isTokenValid(String token);
    
    JwtSubject extractSubject(String token);
+
+   long getExpirationSeconds(String token);
 }

@@ -28,6 +28,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // open endpoints for authentication
                         .requestMatchers("/api/students/**").hasRole("STUDENT")
+                        .requestMatchers(
+                                "/api/v1/auth/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                            )
+                        .permitAll()
                         .anyRequest().authenticated() // all other endpoints require authentication
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

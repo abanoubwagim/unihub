@@ -23,6 +23,7 @@ import com.unihub.identity.api.dto.VerifyResetOtpResponse;
 import com.unihub.identity.application.usecase.ForgotPasswordUseCase;
 import com.unihub.identity.application.usecase.GetCurrentUserUseCase;
 import com.unihub.identity.application.usecase.LoginUserUseCase;
+import com.unihub.identity.application.usecase.LogoutUseCase;
 import com.unihub.identity.application.usecase.RegisterUserUseCase;
 import com.unihub.identity.application.usecase.ResendVerificationUseCase;
 import com.unihub.identity.application.usecase.ResetPasswordUseCase;
@@ -31,6 +32,7 @@ import com.unihub.identity.application.usecase.VerifyResetOtpUseCase;
 
 import org.springframework.security.core.Authentication;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -47,6 +49,7 @@ public class AuthController {
     private final ForgotPasswordUseCase forgotPasswordUseCase;
     private final ResetPasswordUseCase resetPasswordUseCase;
     private final VerifyResetOtpUseCase verifyResetOtpUseCase;
+    private final LogoutUseCase logoutUseCase;
 
     @PostMapping("/login")
     public LoginResponse login(
@@ -93,6 +96,15 @@ public class AuthController {
     @PostMapping("/verify-reset-otp")
     public VerifyResetOtpResponse verifyResetOtp(@Valid @RequestBody VerifyResetOtpRequest request) {
         return verifyResetOtpUseCase.verifyResetOtp(request);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            logoutUseCase.logout(authHeader.substring(7));
+        }
+        return ResponseEntity.ok("Logged out successfully");
     }
 
 }
