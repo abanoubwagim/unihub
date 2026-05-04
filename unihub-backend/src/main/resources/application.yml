@@ -1,24 +1,106 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/{your_database_name}
-    username: {your_database_username}
-    password: {your_database_password}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/unihub}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
+  hikari:
+    maximum-pool-size: 10
+    minimum-idle: 2
+    connection-timeout: 30000
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
   mail:
     host: smtp.gmail.com
     port: 587
-    username: {MAIL_USERNAME}
-    password: {MAIL_PASSWORD}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
-            enable: true  
+            enable: true
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 12MB
+
+  # Redis
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  # OAuth2 
+  security:
+    oauth2:
+      client:
+        registration:
+
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            # Scopes: email and profile are sufficient — do not request extra scopes
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"  
+
+          microsoft:
+            client-id: ${MICROSOFT_CLIENT_ID}
+            client-secret: ${MICROSOFT_CLIENT_SECRET}
+            scope:
+              - openid
+              - email
+              - profile
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
+        provider:
+
+          microsoft:
+            authorization-uri: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+            token-uri: https://login.microsoftonline.com/common/oauth2/v2.0/token
+            user-info-uri: https://graph.microsoft.com/oidc/userinfo
+            jwk-set-uri: https://login.microsoftonline.com/common/discovery/v2.0/keys
+            user-name-attribute: sub
+
+server:
+  port: ${SERVER_PORT:8080}
 
 jwt:
-  secret: "{your_secret_key}"
-  expiration: 86400000 # 1 day in milliseconds
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000} # 1 day in milliseconds
+
+storage:
+  local:
+    base-path: ${STORAGE_PATH:uploads}
+    base-url: ${STORAGE_BASE_URL:http://localhost:8080}
+
+# App-level config
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    com.unihub: INFO
+    org.springframework.security: INFO
