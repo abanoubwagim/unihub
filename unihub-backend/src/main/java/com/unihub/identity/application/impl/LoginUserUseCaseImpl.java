@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.unihub.identity.api.dto.LoginRequest;
 import com.unihub.identity.api.dto.LoginResponse;
 import com.unihub.identity.application.usecase.LoginUserUseCase;
+import com.unihub.identity.domain.enums.AuthProvider;
 import com.unihub.identity.domain.enums.UserStatus;
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.UserRepository;
@@ -32,6 +33,13 @@ public class LoginUserUseCaseImpl implements LoginUserUseCase {
         
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
+
+
+        if (user.getAuthProvider() != AuthProvider.LOCAL) {
+            throw new UnauthorizedException(
+                    "This account uses " + user.getAuthProvider().name().toLowerCase()
+                    + " login. Please sign in with that provider.");
+        }        
 
         // Check password
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {

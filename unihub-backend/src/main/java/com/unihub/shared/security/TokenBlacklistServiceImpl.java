@@ -1,39 +1,37 @@
 package com.unihub.shared.security;
 
-import org.springframework.scheduling.annotation.Scheduled;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import com.unihub.shared.util.TokenHashUtil;
+
+import java.util.concurrent.TimeUnit;
 
 @Service
+@RequiredArgsConstructor
 public class TokenBlacklistServiceImpl implements TokenBlacklistService {
 
-    private final Map<String, Long> blacklist = new ConcurrentHashMap<>();
+    private static final String PREFIX = "blacklist:";
+
+    private final RedisTemplate<String, String> redisTemplate;
 
     @Override
     public void blacklist(String token, long ttlSeconds) {
+
         if (ttlSeconds > 0) {
-            blacklist.put(token, Instant.now().getEpochSecond() + ttlSeconds);
+            redisTemplate.opsForValue()
+                    .set(toKey(token), "1", ttlSeconds, TimeUnit.SECONDS);
         }
+
     }
 
     @Override
     public boolean isBlacklisted(String token) {
-        Long expiry = blacklist.get(token);
-        if (expiry == null) return false;
-        if (Instant.now().getEpochSecond() > expiry) {
-            blacklist.remove(token);
-            return false;
-        }
-        return true;
+        return Boolean.TRUE.equals(redisTemplate.hasKey(toKey(token)));
     }
 
-    // Every hour automatic system removes expired tokens.
-    @Scheduled(fixedRate = 3600000)
-    public void cleanupExpired() {
-        long now = Instant.now().getEpochSecond();
-        blacklist.entrySet().removeIf(entry -> entry.getValue() < now);
+    private String toKey(String token) {
+        return PREFIX + TokenHashUtil.sha256(token);
     }
 }
