@@ -41,8 +41,8 @@ public class PasswordResetToken {
     @Column(nullable = false)
     private int attempts;
 
-    @Column(name = "reset_token_hash")
-    private String resetTokenHash;
+    @Column(name = "reset_token", unique = true)
+    private String resetToken;
 
     @Column(name = "reset_token_expires_at")
     private LocalDateTime resetTokenExpiresAt;
@@ -59,8 +59,8 @@ public class PasswordResetToken {
         this.attempts++;
     }
 
-    public void setResetToken(String resetTokenHash) {
-        this.resetTokenHash = resetTokenHash;
+    public void setResetToken(String plainResetToken) {
+        this.resetToken = plainResetToken;
         this.resetTokenExpiresAt = LocalDateTime.now().plusMinutes(5);
     }
 
@@ -70,7 +70,7 @@ public class PasswordResetToken {
 
     public void resetFor(String newOtpHash) {
         this.otpHash = newOtpHash;
-        this.resetTokenHash = null;
+        this.resetToken = null;
         this.resetTokenExpiresAt = null;
         this.used = false;
         this.attempts = 0;

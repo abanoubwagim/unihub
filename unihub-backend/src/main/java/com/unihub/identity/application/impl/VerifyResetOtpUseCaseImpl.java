@@ -14,8 +14,8 @@ import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.BadRequestException;
-import com.unihub.shared.exception.NotFoundException;
 import com.unihub.shared.exception.UnauthorizedException;
+import com.unihub.shared.util.TokenHashUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +25,7 @@ public class VerifyResetOtpUseCaseImpl implements VerifyResetOtpUseCase {
 
     private static final int MAX_ATTEMPTS = 5;
 
+    private static final String GENERIC_NOT_FOUND_MSG = "No reset code found for this email. Please request a new one";
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
@@ -35,11 +36,13 @@ public class VerifyResetOtpUseCaseImpl implements VerifyResetOtpUseCase {
 
         String email = request.email().trim().toLowerCase();
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        User user = userRepository.findByEmail(email).orElse(null);
 
-        PasswordResetToken token = tokenRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new BadRequestException("No reset code found. Please request a new one"));
+        PasswordResetToken token = (user == null) ? null : tokenRepository.findByUserId(user.getId()).orElse(null);
+
+        if (user == null || token == null) {
+            throw new BadRequestException(GENERIC_NOT_FOUND_MSG);
+        }
 
         if (token.isUsed()) {
             throw new BadRequestException("Reset code already used. Please request a new one");
@@ -62,7 +65,8 @@ public class VerifyResetOtpUseCaseImpl implements VerifyResetOtpUseCase {
 
         // OTP is correct — generate reset token
         String plainResetToken = UUID.randomUUID().toString();
-        token.setResetToken(passwordEncoder.encode(plainResetToken));
+        String hashedResetToken = TokenHashUtil.sha256(plainResetToken);
+        token.setResetToken(hashedResetToken);
         token.markUsed();
         tokenRepository.save(token);
 
