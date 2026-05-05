@@ -1,4 +1,4 @@
-package com.unihub.shared.util;
+package com.unihub.shared.domain;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
