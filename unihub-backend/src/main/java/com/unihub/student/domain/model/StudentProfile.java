@@ -28,6 +28,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -83,6 +84,10 @@ public class StudentProfile {
 
     @Column(name = "cert_attempts", nullable = false)
     private int certAttempts = 0;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "student_skills", joinColumns = @JoinColumn(name = "student_id"), inverseJoinColumns = @JoinColumn(name = "skill_id"))

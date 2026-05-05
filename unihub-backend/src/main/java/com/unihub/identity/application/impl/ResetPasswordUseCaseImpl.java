@@ -11,6 +11,7 @@ import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.BadRequestException;
+import com.unihub.shared.util.TokenHashUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,7 +32,9 @@ public class ResetPasswordUseCaseImpl implements ResetPasswordUseCase {
         }
 
         // Find the token using resetToken
-        PasswordResetToken token = tokenRepository.findByResetTokenHash(request.resetToken())
+        String hashedToken = TokenHashUtil.sha256(request.resetToken());
+        
+        PasswordResetToken token = tokenRepository.findByResetToken(hashedToken)
                 .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
 
         if (token.isResetTokenExpired()) {

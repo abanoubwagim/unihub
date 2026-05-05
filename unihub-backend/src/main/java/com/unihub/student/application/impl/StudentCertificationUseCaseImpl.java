@@ -2,6 +2,8 @@ package com.unihub.student.application.impl;
 
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,8 @@ public class StudentCertificationUseCaseImpl implements StudentCertificationUseC
     private final StudentProfileRepository profileRepository;
     private final StudentCertificationRepository certificationRepository;
     private final FileStorageService fileStorageService;
+
+    private static final Logger log = LoggerFactory.getLogger(StudentCertificationUseCaseImpl.class);
 
     public CertificationResponse add(UUID userId, CertificationRequest request, MultipartFile file) {
         var profile = profileRepository.findByUserId(userId)
@@ -55,10 +59,19 @@ public class StudentCertificationUseCaseImpl implements StudentCertificationUseC
         cert.setDateIssued(request.dateIssued());
 
         if (file != null && !file.isEmpty()) {
-            if (cert.getFileUrl() != null) {
-                fileStorageService.delete(cert.getFileUrl());
+            String oldUrl = cert.getFileUrl();
+            String newUrl = fileStorageService.upload(file, "students/certifications/" + userId);
+            cert.setFileUrl(newUrl);
+            certificationRepository.save(cert);
+
+            if (oldUrl != null) {
+                try {
+                    fileStorageService.delete(oldUrl);
+                } catch (Exception e) {
+                    log.warn("Could not delete old certification file: url={}, reason={}", oldUrl, e.getMessage());
+                }
             }
-            cert.setFileUrl(fileStorageService.upload(file, "students/certifications/" + userId));
+            return toResponse(cert);
         }
 
         return toResponse(certificationRepository.save(cert));
@@ -80,10 +93,17 @@ public class StudentCertificationUseCaseImpl implements StudentCertificationUseC
 
     public void delete(UUID userId, UUID certId) {
         var cert = getOwnedCertification(userId, certId);
-        if (cert.getFileUrl() != null) {
-            fileStorageService.delete(cert.getFileUrl());
-        }
+        String fileUrl = cert.getFileUrl();
         certificationRepository.delete(cert);
+
+        if (fileUrl != null) {
+            try {
+                fileStorageService.delete(fileUrl);
+            } catch (Exception e) {
+                log.warn("Failed to delete file after cert deletion: url={}, error={}", fileUrl, e.getMessage());
+
+            }
+        }
     }
 
     private StudentCertification getOwnedCertification(UUID userId, UUID certId) {
