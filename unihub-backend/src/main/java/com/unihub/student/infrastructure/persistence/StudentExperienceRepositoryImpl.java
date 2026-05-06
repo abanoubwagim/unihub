@@ -53,4 +53,8 @@ public class StudentExperienceRepositoryImpl implements StudentExperienceReposit
         jpa.delete(entity);
     }
 
+    @Override
+    public void deleteAllByStudent_Id(UUID studentId) {
+        jpa.deleteAllByStudent_Id(studentId);
+    }
 }

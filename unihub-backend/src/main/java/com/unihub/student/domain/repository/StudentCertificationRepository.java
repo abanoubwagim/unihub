@@ -25,4 +25,7 @@ public interface StudentCertificationRepository {
     Page<StudentCertification> findAllByStudent_Id(UUID studentId, Pageable pageable);
 
     Optional<StudentCertification> findByIdAndStudent_Id(UUID id, UUID studentId);
+
+    // Bulk delete — used during account deletion cleanup
+    void deleteAllByStudent_Id(UUID studentId);
 }

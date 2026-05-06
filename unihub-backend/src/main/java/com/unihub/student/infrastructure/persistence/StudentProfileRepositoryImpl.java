@@ -1,6 +1,8 @@
 package com.unihub.student.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
@@ -38,5 +40,18 @@ public class StudentProfileRepositoryImpl implements StudentProfileRepository {
     @Override
     public StudentProfile save(StudentProfile profile) {
         return jpa.save(profile);
+    }
+
+    @Override
+    public void delete(StudentProfile profile) {
+        jpa.delete(profile);
+    }
+
+    @Override
+    public List<StudentProfile> findAllByUserIdIn(Set<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return List.of();
+        }
+        return jpa.findAllByUserIdIn(userIds);
     }
 }

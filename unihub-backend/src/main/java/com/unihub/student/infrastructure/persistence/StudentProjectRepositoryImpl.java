@@ -51,4 +51,9 @@ public class StudentProjectRepositoryImpl implements StudentProjectRepository {
     public Optional<StudentProject> findByIdAndStudent_Id(UUID id, UUID studentId) {
         return jpa.findByIdAndStudent_Id(id, studentId);
     }
+
+    @Override
+    public void deleteAllByStudent_Id(UUID studentId) {
+        jpa.deleteAllByStudent_Id(studentId);
+    }
 }

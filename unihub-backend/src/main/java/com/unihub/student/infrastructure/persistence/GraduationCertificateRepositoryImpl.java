@@ -34,4 +34,9 @@ public class GraduationCertificateRepositoryImpl implements GraduationCertificat
     public GraduationCertificate save(GraduationCertificate cert) {
         return jpa.save(cert);
     }
+    
+    @Override
+    public void deleteAllByStudentId(UUID studentId) {
+        jpa.deleteAllByStudentId(studentId);
+    }
 }

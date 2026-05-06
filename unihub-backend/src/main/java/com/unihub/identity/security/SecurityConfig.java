@@ -1,4 +1,4 @@
-package com.unihub.shared.security;
+package com.unihub.identity.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.unihub.identity.infrastructure.oauth.OAuth2FailureHandler;
 import com.unihub.identity.infrastructure.oauth.OAuth2SuccessHandler;
 import com.unihub.identity.infrastructure.oauth.UniHubOAuth2UserService;
+import com.unihub.shared.security.JwtAuthenticationFilter;
 
 import java.util.List;
 

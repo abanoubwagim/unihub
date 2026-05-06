@@ -2,12 +2,14 @@ package com.unihub.identity.application.impl;
 
 import com.unihub.identity.application.usecase.DeleteAccountUseCase;
 import com.unihub.identity.domain.enums.AuthProvider;
+import com.unihub.identity.domain.event.UserDeletedEvent;
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.BadRequestException;
 import com.unihub.shared.exception.NotFoundException;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ public class DeleteAccountUseCaseImpl implements DeleteAccountUseCase {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -44,5 +47,6 @@ public class DeleteAccountUseCaseImpl implements DeleteAccountUseCase {
         }
 
         userRepository.deleteById(userId);
+        eventPublisher.publishEvent(new UserDeletedEvent(userId));
     }
 }

@@ -79,12 +79,8 @@ public class StudentExperienceUseCaseImpl implements StudentExperienceUseCase {
     }
 
     private StudentExperience getOwnedExperience(UUID userId, UUID experienceId) {
-        var experience = experienceRepository.findById(experienceId)
+        return experienceRepository.findByIdAndStudent_UserId(experienceId, userId)
                 .orElseThrow(() -> new NotFoundException("Experience not found"));
-        if (!experience.getStudent().getUserId().equals(userId)) {
-            throw new NotFoundException("Experience not found");
-        }
-        return experience;
     }
 
     private ExperienceResponse toResponse(StudentExperience exp) {

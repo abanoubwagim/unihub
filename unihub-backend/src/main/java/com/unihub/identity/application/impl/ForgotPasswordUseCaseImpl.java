@@ -1,6 +1,7 @@
 package com.unihub.identity.application.impl;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ForgotPasswordUseCaseImpl implements ForgotPasswordUseCase {
 
+    private static final int RATE_LIMIT_MINUTES = 1;
+    private static final int OTP_EXPIRY_MINUTES = 5;
+
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
@@ -31,40 +35,48 @@ public class ForgotPasswordUseCaseImpl implements ForgotPasswordUseCase {
     @Override
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
+
         String email = request.email().trim().toLowerCase();
 
-        userRepository.findByEmail(email).ifPresent(user -> {
+        // Silently ignore unknown e-mails to avoid user-enumeration
+        userRepository.findByEmail(email).ifPresent(user -> processReset(user.getId(), email));
+    }
 
-            String otp = OtpGenerator.generate();
-            String otpHash = passwordEncoder.encode(otp);
+    private void processReset(UUID userId, String email) {
 
-            tokenRepository.findByUserId(user.getId()).ifPresentOrElse(
-                    existing -> {
-                        // Rate limit
-                        if (existing.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(1))) {
-                            throw new BadRequestException("Please wait before requesting a new code");
-                        }
-                        // Edit the existing one instead of deleting and creating a new one
-                        existing.resetFor(otpHash);
-                        tokenRepository.save(existing);
-                    },
-                    () -> {
-                        
-                        // No token — New work
-                        PasswordResetToken token = PasswordResetToken.builder()
-                                .id(UUID.randomUUID())
-                                .userId(user.getId())
-                                .otpHash(otpHash)
-                                .expiresAt(LocalDateTime.now().plusMinutes(5))
-                                .used(false)
-                                .attempts(0)
-                                .createdAt(LocalDateTime.now())
-                                .build();
-                        tokenRepository.save(token);
-                    });
+        String otp = OtpGenerator.generate();
+        String otpHash = passwordEncoder.encode(otp);
 
-            // Delegate to separate 
-            emailSender.sendResetEmail(email, otp);
-        });
+        Optional<PasswordResetToken> existing = tokenRepository.findByUserId(userId);
+
+        if (existing.isPresent()) {
+            enforceRateLimit(existing.get());
+            existing.get().resetFor(otpHash);
+            tokenRepository.save(existing.get());
+            log.debug("Password reset token refreshed for userId={}", userId);
+
+        } else {
+            PasswordResetToken token = PasswordResetToken.builder()
+                    .id(UUID.randomUUID())
+                    .userId(userId)
+                    .otpHash(otpHash)
+                    .expiresAt(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES))
+                    .used(false)
+                    .attempts(0)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            tokenRepository.save(token);
+            log.debug("New password reset token created for userId={}", userId);
+        }
+
+        // Fire-and-forget — runs in the caller's thread pool via @Async
+        emailSender.sendResetEmail(email, otp);
+    }
+
+    private void enforceRateLimit(PasswordResetToken token) {
+        LocalDateTime cooldownBoundary = LocalDateTime.now().minusMinutes(RATE_LIMIT_MINUTES);
+        if (token.getCreatedAt().isAfter(cooldownBoundary)) {
+            throw new BadRequestException("Please wait before requesting a new code");
+        }
     }
 }
