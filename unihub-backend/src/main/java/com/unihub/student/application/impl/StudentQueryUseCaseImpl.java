@@ -34,6 +34,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional(readOnly = true)
 public class StudentQueryUseCaseImpl implements StudentQueryUseCase {
 
+    private static final int PUBLIC_PAGE_SIZE = 50;
+
     private final StudentProfileRepository studentProfileRepository;
     private final GraduationCertificateRepository gradCertRepo;
     private final StudentExperienceRepository experienceRepository;
@@ -41,20 +43,21 @@ public class StudentQueryUseCaseImpl implements StudentQueryUseCase {
     private final StudentCertificationRepository certificationRepository;
     private final StudentProfileMapper mapper;
 
-    // Profile
-
+    @Override
     public StudentProfileResponse getMyProfile(UUID userId) {
         return studentProfileRepository.findByUserId(userId)
                 .map(mapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Student profile not found"));
     }
 
+    @Override
     public StudentProfileResponse getPublicProfile(UUID studentId) {
         return studentProfileRepository.findById(studentId)
                 .map(mapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Student not found"));
     }
 
+    @Override
     public GraduationCertResponse getGradCertStatus(UUID userId) {
         var profile = studentProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new NotFoundException("Student profile not found"));
@@ -66,41 +69,43 @@ public class StudentQueryUseCaseImpl implements StudentQueryUseCase {
                         cert.getAttemptNumber(),
                         cert.getRejectionReason()))
                 .orElse(new GraduationCertResponse(
-                    null,
-                    GraduationCertificateStatus.NOT_SUBMITTED,
-                    0,
-                    null
-                ));
+                        null,
+                        GraduationCertificateStatus.NOT_SUBMITTED,
+                        0,
+                        null));
     }
 
-    // Experiences
-
+    @Override
     public List<ExperienceResponse> getExperiences(UUID studentId) {
         validateStudentExists(studentId);
-        Pageable pageable = PageRequest.of(0, 20, Sort.by("startDate").descending());
+        Pageable pageable = PageRequest.of(0, PUBLIC_PAGE_SIZE, Sort.by("startDate").descending());
         return experienceRepository.findAllByStudent_Id(studentId, pageable)
                 .getContent()
-                .stream().map(this::mapExperience).toList();
+                .stream()
+                .map(this::mapExperience)
+                .toList();
     }
 
+    @Override
     public ExperienceResponse getExperience(UUID studentId, UUID experienceId) {
-
         validateStudentExists(studentId);
         return experienceRepository.findByIdAndStudent_Id(experienceId, studentId)
                 .map(this::mapExperience)
                 .orElseThrow(() -> new NotFoundException("Experience not found"));
     }
 
-    // Projects
-
+    @Override
     public List<ProjectResponse> getProjects(UUID studentId) {
         validateStudentExists(studentId);
-        Pageable pageable = PageRequest.of(0, 20, Sort.by("startDate").descending());
+        Pageable pageable = PageRequest.of(0, PUBLIC_PAGE_SIZE, Sort.by("startDate").descending());
         return projectRepository.findAllByStudent_Id(studentId, pageable)
                 .getContent()
-                .stream().map(this::mapProject).toList();
+                .stream()
+                .map(this::mapProject)
+                .toList();
     }
 
+    @Override
     public ProjectResponse getProject(UUID studentId, UUID projectId) {
         validateStudentExists(studentId);
         return projectRepository.findByIdAndStudent_Id(projectId, studentId)
@@ -108,16 +113,18 @@ public class StudentQueryUseCaseImpl implements StudentQueryUseCase {
                 .orElseThrow(() -> new NotFoundException("Project not found"));
     }
 
-    // Certifications
-
+    @Override
     public List<CertificationResponse> getCertifications(UUID studentId) {
         validateStudentExists(studentId);
-        Pageable pageable = PageRequest.of(0, 20, Sort.by("dateIssued").descending());
+        Pageable pageable = PageRequest.of(0, PUBLIC_PAGE_SIZE, Sort.by("dateIssued").descending());
         return certificationRepository.findAllByStudent_Id(studentId, pageable)
                 .getContent()
-                .stream().map(this::mapCertification).toList();
+                .stream()
+                .map(this::mapCertification)
+                .toList();
     }
 
+    @Override
     public CertificationResponse getCertification(UUID studentId, UUID certId) {
         validateStudentExists(studentId);
         return certificationRepository.findByIdAndStudent_Id(certId, studentId)
@@ -164,5 +171,4 @@ public class StudentQueryUseCaseImpl implements StudentQueryUseCase {
                 c.getDateIssued(),
                 c.getFileUrl());
     }
-
 }

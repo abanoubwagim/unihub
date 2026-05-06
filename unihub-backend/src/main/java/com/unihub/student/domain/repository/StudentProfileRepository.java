@@ -1,6 +1,8 @@
 package com.unihub.student.domain.repository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -13,5 +15,7 @@ public interface StudentProfileRepository {
     boolean existsByUserId(UUID userId);
     boolean existsById(UUID id);
     StudentProfile save(StudentProfile profile);
+    void delete(StudentProfile profile);
+    List<StudentProfile> findAllByUserIdIn(Set<UUID> userIds);
 
 }

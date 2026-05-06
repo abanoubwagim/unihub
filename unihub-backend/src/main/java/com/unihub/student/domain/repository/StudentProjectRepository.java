@@ -26,4 +26,6 @@ public interface StudentProjectRepository {
 
     Optional<StudentProject> findByIdAndStudent_Id(UUID id, UUID studentId);
 
+    // Bulk delete — used during account deletion cleanup
+    void deleteAllByStudent_Id(UUID studentId);
 }

@@ -25,4 +25,7 @@ public interface StudentExperienceRepository {
     Page<StudentExperience> findAllByStudent_Id(UUID studentId, Pageable pageable);
 
     Optional<StudentExperience> findByIdAndStudent_Id(UUID id, UUID studentId);
+
+    // Bulk delete — used during account deletion cleanup
+    void deleteAllByStudent_Id(UUID studentId);
 }

@@ -1,6 +1,8 @@
 package com.unihub.student.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -17,4 +19,7 @@ public interface JpaStudentProfileRepository extends JpaRepository<StudentProfil
     Optional<StudentProfile> findById(UUID id);
     
     boolean existsByUserId(UUID userId);
+
+    @EntityGraph(attributePaths = {"skills", "links"})
+    List<StudentProfile> findAllByUserIdIn(Set<UUID> userIds);
 }

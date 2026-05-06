@@ -15,4 +15,6 @@ public interface GraduationCertificateRepository {
 
     int countByStudentId(UUID studentId);
 
+    // Bulk delete — used during account deletion cleanup
+    void deleteAllByStudentId(UUID studentId);
 }

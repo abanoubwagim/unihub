@@ -6,6 +6,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,6 +49,7 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
 
     private static final int MAX_CERT_ATTEMPTS = 3;
 
+    @Override
     public StudentProfileResponse updateProfile(UUID userId, UpdateProfileRequest request) {
         var profile = getProfileByUserId(userId);
 
@@ -83,12 +87,14 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
         return mapper.toResponse(saved);
     }
 
+    @Override
     public void setUniversity(UUID userId, UUID universityId, UUID majorId) {
         var profile = getProfileByUserId(userId);
         profile.setUniversityOnce(universityId, majorId);
         studentProfileRepository.save(profile);
     }
 
+    @Override
     public void updateSkills(UUID userId, Set<UUID> skillIds) {
         var profile = getProfileByUserId(userId);
         var skills = new HashSet<>(skillRepository.findAllByIdIn(skillIds));
@@ -96,6 +102,7 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
         studentProfileRepository.save(profile);
     }
 
+    @Override
     public String uploadPhoto(UUID userId, MultipartFile file) {
         var profile = getProfileByUserId(userId);
         String url = fileStorageService.upload(file, "students/photos/" + userId);
@@ -104,6 +111,8 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
         return url;
     }
 
+    @Override
+    @Retryable(retryFor = OptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 50, multiplier = 2))
     public GraduationCertResponse uploadGraduationCertificate(UUID userId, MultipartFile file) {
 
         if (file == null) {
@@ -147,6 +156,7 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
         return new GraduationCertResponse(cert.getId(), cert.getStatus(), cert.getAttemptNumber(), null);
     }
 
+    @Override
     public void reviewGraduationCertificate(UUID certId, boolean approved, String rejectionReason) {
         var cert = gradCertRepo.findById(certId)
                 .orElseThrow(() -> new NotFoundException("Certificate not found"));

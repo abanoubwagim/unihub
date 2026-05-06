@@ -51,4 +51,9 @@ public class StudentCertificationRepositoryImpl implements StudentCertificationR
     public Optional<StudentCertification> findByIdAndStudent_Id(UUID id, UUID studentId) {
         return jpa.findByIdAndStudent_Id(id, studentId);
     }
+
+    @Override
+    public void deleteAllByStudent_Id(UUID studentId) {
+        jpa.deleteAllByStudent_Id(studentId);
+    }
 }
