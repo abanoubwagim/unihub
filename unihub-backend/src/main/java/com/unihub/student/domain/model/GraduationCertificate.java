@@ -33,7 +33,7 @@ public class GraduationCertificate {
     @Column(name = "student_id", nullable = false)
     private UUID studentId;
 
-    @Column(name = "file_url", nullable = false)
+    @Column(name = "file_url")
     private String fileUrl;
 
     @Enumerated(EnumType.STRING)

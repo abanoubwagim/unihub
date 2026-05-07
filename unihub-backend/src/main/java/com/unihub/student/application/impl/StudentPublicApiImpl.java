@@ -41,6 +41,8 @@ public class StudentPublicApiImpl implements StudentPublicApi {
                 p.getId(),
                 p.getName(),
                 p.getProfilePhotoUrl(),
-                p.getMajorId());
+                p.getMajorId(),
+                p.getUniversityId(),
+                p.getLevel() != null ? p.getLevel().name() : null);
     }
 }

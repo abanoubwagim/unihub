@@ -114,7 +114,6 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
     @Override
     @Retryable(retryFor = OptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 50, multiplier = 2))
     public GraduationCertResponse uploadGraduationCertificate(UUID userId, MultipartFile file) {
-
         if (file == null) {
             throw new InvalidOperationException("Please upload a graduation certificate file.");
         }
@@ -123,7 +122,6 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
         if (profile.getUniversityId() == null || profile.getMajorId() == null) {
             throw new InvalidOperationException("You must set your university and major first.");
         }
-
         if (profile.isVerified()) {
             throw new InvalidOperationException("Your graduation certificate is already approved.");
         }
@@ -139,21 +137,28 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
                     throw new InvalidOperationException("You already have a pending certificate.");
                 });
 
-        String fileUrl = fileStorageService.upload(file, "students/graduation/" + userId);
-
+        
         var cert = new GraduationCertificate();
         cert.setStudentId(profile.getId());
-        cert.setFileUrl(fileUrl);
         cert.setAttemptNumber(attempts + 1);
-        gradCertRepo.save(cert);
+
+        GraduationCertificate savedCert = gradCertRepo.save(cert);
 
         profile.setCertAttempts(attempts + 1);
-        studentProfileRepository.save(profile);
+        studentProfileRepository.save(profile); 
+
+        String fileUrl = fileStorageService.upload(
+                file, "students/graduation/" + userId + "/" + savedCert.getId());
+
+        savedCert.setFileUrl(fileUrl);
+        gradCertRepo.save(savedCert);
 
         eventPublisher.publishEvent(
-                new GraduationCertificateSubmittedEvent(profile.getId(), profile.getUniversityId(), fileUrl));
+                new GraduationCertificateSubmittedEvent(
+                        profile.getId(), profile.getUniversityId(), fileUrl));
 
-        return new GraduationCertResponse(cert.getId(), cert.getStatus(), cert.getAttemptNumber(), null);
+        return new GraduationCertResponse(
+                savedCert.getId(), savedCert.getStatus(), savedCert.getAttemptNumber(), null);
     }
 
     @Override

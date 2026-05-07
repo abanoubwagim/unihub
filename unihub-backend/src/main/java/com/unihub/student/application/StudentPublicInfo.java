@@ -8,6 +8,8 @@ public record StudentPublicInfo(
     UUID profileId,
     String name,
     String profilePhotoUrl,
-    UUID majorId
+    UUID majorId,
+    UUID universityId,
+    String level
 ) {
 }
