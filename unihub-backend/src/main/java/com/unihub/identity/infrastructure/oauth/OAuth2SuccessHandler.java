@@ -1,6 +1,5 @@
 package com.unihub.identity.infrastructure.oauth;
 
-import com.unihub.identity.domain.model.User;
 import com.unihub.shared.security.JwtService;
 import com.unihub.shared.security.JwtSubject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -15,7 +15,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.net.URI;
-
+import java.time.Duration;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -23,12 +24,14 @@ import java.net.URI;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtService jwtService;
+    private final StringRedisTemplate redisTemplate;
+
+    private static final String OAUTH2_CODE_PREFIX = "oauth2:code:";
+    private static final Duration CODE_TTL = Duration.ofSeconds(60);
+    private static final String OAUTH2_CALLBACK_PATH = "/oauth2/callback";
 
     @Value("${app.frontend-url:http://localhost:4200}")
     private String frontendUrl;
-
-
-    private static final String OAUTH2_CALLBACK_PATH = "/oauth2/callback";
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -42,25 +45,38 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             return;
         }
 
-        User user = oAuth2User.getUser();
+        try {
+            var user = oAuth2User.getUser();
+            String jwt = jwtService.generateToken(
+                    new JwtSubject(user.getId(), user.getEmail(), user.getRole().name()));
 
-        String token = jwtService.generateToken(
-                new JwtSubject(user.getId(), user.getEmail(), user.getRole().name()));
+            // Store JWT under a one-time code — never expose the JWT in the URL
+            String code = UUID.randomUUID().toString();
+            String redisKey = OAUTH2_CODE_PREFIX + code;
+            redisTemplate.opsForValue().set(redisKey, jwt, CODE_TTL);
 
-        String redirectUrl = buildRedirectUrl(token);
-        log.info("OAuth2 success — redirecting userId={} to frontend", user.getId());
+            String redirectUrl = UriComponentsBuilder
+                    .fromUri(URI.create(frontendUrl))
+                    .path(OAUTH2_CALLBACK_PATH)
+                    .fragment("code=" + code)
+                    .build()
+                    .toUriString();
 
-        clearAuthenticationAttributes(request);
+            log.info("OAuth2 success — redirecting userId={} via one-time code", user.getId());
+            clearAuthenticationAttributes(request);
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
 
-        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
-    }
+        } catch (Exception e) {
+            log.error("OAuth2 success handler failed — error={}", e.getMessage(), e);
 
-    private String buildRedirectUrl(String token) {
-        return UriComponentsBuilder
-                .fromUri(URI.create(frontendUrl + OAUTH2_CALLBACK_PATH))
-                .queryParam("token", token)
-                .queryParam("tokenType", "Bearer")
-                .build()
-                .toUriString();
+            String errorRedirect = UriComponentsBuilder
+                    .fromUri(URI.create(frontendUrl))
+                    .path(OAUTH2_CALLBACK_PATH)
+                    .queryParam("error", "SERVER_ERROR")
+                    .build()
+                    .toUriString();
+
+            getRedirectStrategy().sendRedirect(request, response, errorRedirect);
+        }
     }
 }
