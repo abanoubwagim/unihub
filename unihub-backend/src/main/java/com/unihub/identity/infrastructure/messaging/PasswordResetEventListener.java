@@ -7,42 +7,44 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
+import com.unihub.identity.application.event.PasswordResetRequestedEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class EmailVerificationEventListener {
+public class PasswordResetEventListener {
 
     private final JavaMailSender mailSender;
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleEmailVerification(EmailVerificationRequestedEvent event) {
-        sendVerificationEmail(event.email(), event.otp());
+    public void handlePasswordReset(PasswordResetRequestedEvent event) {
+        sendResetEmail(event.email(), event.otp());
     }
 
-    private void sendVerificationEmail(String email, String otp) {
+    private void sendResetEmail(String email, String otp) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(email);
-            message.setSubject("UniHub — Verify Your Email");
+            message.setSubject("UniHub — Password Reset Code");
             message.setText("""
-                    Welcome to UniHub!
+                    Hi,
 
-                    Your verification code is: %s
+                    You requested to reset your UniHub password.
+
+                    Your reset code is: %s
 
                     This code expires in 5 minutes.
+                    If you did not request this, please ignore this email.
 
                     """.formatted(otp));
             mailSender.send(message);
-            log.info("Verification email sent — to={}", email);
+            log.info("Password reset email sent — to={}", email);
         } catch (Exception e) {
-            log.error("Failed to send verification email — to={}, error={}", email, e.getMessage());
+            log.error("Failed to send password reset email — to={}, error={}", email, e.getMessage());
         }
     }
 }

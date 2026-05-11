@@ -12,6 +12,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -57,6 +58,12 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Version
+    private Long version;
+
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     public void verifyEmail() {
         this.emailVerified = true;
         this.updatedAt = LocalDateTime.now();
@@ -79,6 +86,7 @@ public class User {
 
     public void changePassword(String newPasswordHash) {
         this.passwordHash = newPasswordHash;
+        this.passwordChangedAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 

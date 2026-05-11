@@ -3,10 +3,13 @@ package com.unihub.identity.domain.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.unihub.identity.domain.config.IdentityConstants;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -47,6 +50,9 @@ public class PasswordResetToken {
     @Column(name = "reset_token_expires_at")
     private LocalDateTime resetTokenExpiresAt;
 
+    @Version
+    private Long version;
+
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiresAt);
     }
@@ -61,7 +67,7 @@ public class PasswordResetToken {
 
     public void setResetToken(String hashedToken) {
         this.resetToken = hashedToken;
-        this.resetTokenExpiresAt = LocalDateTime.now().plusMinutes(5);
+        this.resetTokenExpiresAt = LocalDateTime.now().plusMinutes(IdentityConstants.RESET_TOKEN_EXPIRY_MINUTES);
     }
 
     public boolean isResetTokenExpired() {
@@ -74,7 +80,7 @@ public class PasswordResetToken {
         this.resetTokenExpiresAt = null;
         this.used = false;
         this.attempts = 0;
-        this.expiresAt = LocalDateTime.now().plusMinutes(5);
+        this.expiresAt = LocalDateTime.now().plusMinutes(IdentityConstants.OTP_EXPIRY_MINUTES);
         this.createdAt = LocalDateTime.now();
     }
 

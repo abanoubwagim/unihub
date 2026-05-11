@@ -7,6 +7,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,6 +43,9 @@ public class EmailVerificationToken {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Version
+    private Long version;
+
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiresAt);
     }
@@ -54,4 +58,11 @@ public class EmailVerificationToken {
         this.attempts++;
     }
 
+    public void refresh(String newOtpHash, int expiryMinutes) {
+        this.otpHash    = newOtpHash;
+        this.expiresAt  = LocalDateTime.now().plusMinutes(expiryMinutes);
+        this.used       = false;
+        this.attempts   = 0;
+        this.createdAt  = LocalDateTime.now();
+    }
 }

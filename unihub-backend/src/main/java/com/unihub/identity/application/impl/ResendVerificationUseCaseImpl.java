@@ -1,55 +1,93 @@
 package com.unihub.identity.application.impl;
 
-
-import java.time.LocalDateTime;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.unihub.identity.api.dto.ResendVerificationRequest;
 import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
 import com.unihub.identity.application.usecase.ResendVerificationUseCase;
+import com.unihub.identity.domain.config.IdentityConstants;
+import com.unihub.identity.domain.model.EmailVerificationToken;
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.EmailVerificationTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.BadRequestException;
 import com.unihub.shared.util.OtpGenerator;
-
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResendVerificationUseCaseImpl implements ResendVerificationUseCase {
 
     private final UserRepository userRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final EmailVerificationTokenRepository tokenRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
     public void resendVerification(ResendVerificationRequest request) {
-
         String email = request.email().trim().toLowerCase();
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(
-                        () -> new BadRequestException("If this email is registered, a verification code will be sent"));
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty())
+            return;
 
-        if (user.isEmailVerified()) {
-            throw new BadRequestException("Email is already verified");
-        }
+        User user = userOpt.get();
+        if (user.isEmailVerified())
+            return;
 
-        tokenRepository.findByUserId(user.getId()).ifPresent(existing -> {
-            if (existing.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(1))) {
+        Optional<EmailVerificationToken> existingOpt = tokenRepository.findByUserId(user.getId());
+
+        existingOpt.ifPresent(existing -> {
+            if (existing.getCreatedAt()
+                    .isAfter(LocalDateTime.now().minusMinutes(IdentityConstants.RATE_LIMIT_MINUTES))) {
                 throw new BadRequestException("Please wait before requesting a new code");
             }
         });
 
         String otp = OtpGenerator.generate();
+        String otpHash = passwordEncoder.encode(otp);
 
+        EmailVerificationToken token;
+        if (existingOpt.isPresent()) {
+            token = existingOpt.get();
+            token.refresh(otpHash, IdentityConstants.OTP_EXPIRY_MINUTES);
+        } else {
+            token = EmailVerificationToken.builder()
+                    .id(UUID.randomUUID())
+                    .userId(user.getId())
+                    .otpHash(otpHash)
+                    .expiresAt(LocalDateTime.now().plusMinutes(IdentityConstants.OTP_EXPIRY_MINUTES))
+                    .used(false)
+                    .attempts(0)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+        }
+
+        try {
+            tokenRepository.save(token);
+        } catch (OptimisticLockingFailureException e) {
+            log.warn("Concurrent resend-verification (version conflict) — userId={}", user.getId());
+            throw new BadRequestException("Please wait before requesting a new code");
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Concurrent resend-verification (insert conflict) — userId={}", user.getId());
+            throw new BadRequestException("Please wait before requesting a new code");
+        }
+
+        
         eventPublisher.publishEvent(
                 new EmailVerificationRequestedEvent(user.getId(), user.getEmail(), otp));
+
+        log.info("Verification email re-queued — userId={}", user.getId());
     }
-
-
 }

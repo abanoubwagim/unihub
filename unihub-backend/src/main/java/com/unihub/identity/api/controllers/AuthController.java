@@ -9,9 +9,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.unihub.identity.api.dto.ExchangeOAuth2CodeRequest;
 import com.unihub.identity.api.dto.ForgotPasswordRequest;
 import com.unihub.identity.api.dto.LoginRequest;
 import com.unihub.identity.api.dto.LoginResponse;
+import com.unihub.identity.api.dto.OAuth2TokenResponse;
 import com.unihub.identity.api.dto.RegisterRequest;
 import com.unihub.identity.api.dto.RegisterResponse;
 import com.unihub.identity.api.dto.ResendVerificationRequest;
@@ -20,6 +22,7 @@ import com.unihub.identity.api.dto.UserResponse;
 import com.unihub.identity.api.dto.VerifyEmailRequest;
 import com.unihub.identity.api.dto.VerifyResetOtpRequest;
 import com.unihub.identity.api.dto.VerifyResetOtpResponse;
+import com.unihub.identity.application.usecase.ExchangeOAuth2CodeUseCase;
 import com.unihub.identity.application.usecase.ForgotPasswordUseCase;
 import com.unihub.identity.application.usecase.GetCurrentUserUseCase;
 import com.unihub.identity.application.usecase.LoginUserUseCase;
@@ -31,11 +34,15 @@ import com.unihub.identity.application.usecase.VerifyEmailUseCase;
 import com.unihub.identity.application.usecase.VerifyResetOtpUseCase;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
+@Validated
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -50,6 +57,7 @@ public class AuthController {
     private final ResetPasswordUseCase resetPasswordUseCase;
     private final VerifyResetOtpUseCase verifyResetOtpUseCase;
     private final LogoutUseCase logoutUseCase;
+    private final ExchangeOAuth2CodeUseCase exchangeOAuth2CodeUseCase;
 
     @PostMapping("/login")
     public LoginResponse login(
@@ -96,6 +104,12 @@ public class AuthController {
     @PostMapping("/verify-reset-otp")
     public VerifyResetOtpResponse verifyResetOtp(@Valid @RequestBody VerifyResetOtpRequest request) {
         return verifyResetOtpUseCase.verifyResetOtp(request);
+    }
+
+    @PostMapping("/oauth2/token")
+    public OAuth2TokenResponse exchangeOAuth2Code(
+            @Valid @RequestBody ExchangeOAuth2CodeRequest request) {
+        return exchangeOAuth2CodeUseCase.exchange(request.code());
     }
 
     @PostMapping("/logout")

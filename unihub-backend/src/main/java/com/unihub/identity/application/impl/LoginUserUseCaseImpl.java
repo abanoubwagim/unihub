@@ -1,8 +1,10 @@
 package com.unihub.identity.application.impl;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import org.springframework.transaction.annotation.Transactional;
 import com.unihub.identity.api.dto.LoginRequest;
 import com.unihub.identity.api.dto.LoginResponse;
 import com.unihub.identity.application.usecase.LoginUserUseCase;
@@ -14,8 +16,7 @@ import com.unihub.shared.exception.UnauthorizedException;
 import com.unihub.shared.security.JwtService;
 import com.unihub.shared.security.JwtSubject;
 
-import lombok.RequiredArgsConstructor;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LoginUserUseCaseImpl implements LoginUserUseCase {
@@ -25,47 +26,49 @@ public class LoginUserUseCaseImpl implements LoginUserUseCase {
     private final JwtService jwtService;
 
     @Override
+    @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
 
 
         // Get User
         String email = request.email().trim().toLowerCase();
-        
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UnauthorizedException("Invalid email or password"));
 
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.warn("Login failed — email not found");
+                    return new UnauthorizedException("Invalid email or password");
+                });
 
         if (user.getAuthProvider() != AuthProvider.LOCAL) {
-            throw new UnauthorizedException(
-                    "This account uses " + user.getAuthProvider().name().toLowerCase()
-                    + " login. Please sign in with that provider.");
-        }        
-
-        // Check password
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            log.warn("Login failed — OAuth account attempted password login: userId={}, provider={}",
+                    user.getId(), user.getAuthProvider());
             throw new UnauthorizedException("Invalid email or password");
         }
 
-        // Check Email Verified
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            log.warn("Login failed — wrong password: userId={}", user.getId());
+            throw new UnauthorizedException("Invalid email or password");
+        }
+
         if (!user.isEmailVerified()) {
+            log.warn("Login failed — email not verified: userId={}", user.getId());
             throw new UnauthorizedException("Email is not verified");
         }
 
-        // Check status
         if (user.getStatus() == UserStatus.BANNED) {
+            log.warn("Login failed — account banned: userId={}", user.getId());
             throw new UnauthorizedException("User is banned");
         }
 
         if (user.getStatus() == UserStatus.SUSPENDED) {
+            log.warn("Login failed — account suspended: userId={}", user.getId());
             throw new UnauthorizedException("User is suspended");
         }
 
-        // Generate JWT
         String token = jwtService.generateToken(
                 new JwtSubject(user.getId(), user.getEmail(), user.getRole().name()));
 
-        // Return
+        log.info("Login successful — userId={}, role={}", user.getId(), user.getRole());
         return new LoginResponse(token, "Bearer");
     }
-
 }
