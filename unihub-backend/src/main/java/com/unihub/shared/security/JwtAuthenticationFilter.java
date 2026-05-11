@@ -21,19 +21,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final TokenBlacklistService tokenBlacklistService;
 
     public JwtAuthenticationFilter(JwtService jwtService,
-                                   TokenBlacklistService tokenBlacklistService) {
+            TokenBlacklistService tokenBlacklistService) {
         this.jwtService = jwtService;
         this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+            HttpServletResponse response,
+            FilterChain filterChain)
             throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
-
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -53,15 +52,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         JwtSubject subject = jwtService.extractSubject(token);
 
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        subject.id().toString(),
-                        null,
-                        Collections.singleton(new SimpleGrantedAuthority("ROLE_" + subject.role())));
+        
+        long issuedAt = jwtService.getIssuedAtEpochSeconds(token);
+        if (tokenBlacklistService.isTokenIssuedBeforeInvalidation(
+                subject.id().toString(), issuedAt)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                subject.id().toString(),
+                null,
+                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + subject.role())));
 
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
         filterChain.doFilter(request, response);
     }
 }

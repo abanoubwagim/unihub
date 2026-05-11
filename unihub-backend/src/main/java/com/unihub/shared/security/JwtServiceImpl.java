@@ -73,4 +73,13 @@ public class JwtServiceImpl implements JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
     }
+
+    @Override
+    public long getIssuedAtEpochSeconds(String token) {
+        try {
+            return extractAllClaims(token).getIssuedAt().toInstant().getEpochSecond();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 }

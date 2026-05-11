@@ -8,4 +8,6 @@ public interface JwtService {
    JwtSubject extractSubject(String token);
 
    long getExpirationSeconds(String token);
+
+   long getIssuedAtEpochSeconds(String token);
 }

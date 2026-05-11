@@ -1,8 +1,11 @@
 package com.unihub.shared.storage;
 
 import com.unihub.shared.exception.BadRequestException;
+import com.unihub.shared.exception.InvalidOperationException;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,10 +16,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
 @Service
+@Profile("!prod")
 public class LocalFileStorageService implements FileStorageService {
 
     @Value("${storage.local.base-path:uploads}")
@@ -26,43 +31,35 @@ public class LocalFileStorageService implements FileStorageService {
     private String baseUrl;
 
     private static final Map<String, String> ALLOWED_TYPES = Map.of(
-            "image/jpeg",      ".jpg",
-            "image/png",       ".png",
-            "image/webp",      ".webp",
-            "application/pdf", ".pdf"
-    );
+            "image/jpeg", ".jpg",
+            "image/png", ".png",
+            "image/webp", ".webp",
+            "application/pdf", ".pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx");
+
+    private static final Set<String> ZIP_BASED_OFFICE_MIMES = Set.of(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation");
 
     private static final long MAX_SIZE_BYTES = 10L * 1024 * 1024; // 10 MB
 
     @Override
     public String upload(MultipartFile file, String path) {
-
-        // Null / empty check
         if (file == null || file.isEmpty()) {
             throw new BadRequestException("File must not be empty");
         }
 
-        // Size check
         if (file.getSize() > MAX_SIZE_BYTES) {
             throw new BadRequestException("File size exceeds the 10 MB limit");
         }
 
         byte[] headerBytes = readHeaderBytes(file);
         String detectedMime = detectMimeFromBytes(headerBytes);
-
-        if (!ALLOWED_TYPES.containsKey(detectedMime)) {
-            throw new BadRequestException(
-                    "File type not allowed. Supported types: JPEG, PNG, WEBP, PDF");
-        }
-
         String declaredMime = file.getContentType();
-        if (declaredMime != null && !declaredMime.equals(detectedMime)) {
-            log.warn("Content-Type mismatch — declared={}, detected={}, path={}",
-                    declaredMime, detectedMime, path);
-            throw new BadRequestException("File content does not match the declared content type");
-        }
+        String effectiveMime = validateAndResolveType(detectedMime, declaredMime);
 
-        String extension = ALLOWED_TYPES.get(detectedMime);
+        String extension = ALLOWED_TYPES.get(effectiveMime);
         String safeFilename = UUID.randomUUID() + extension;
 
         try {
@@ -71,21 +68,22 @@ public class LocalFileStorageService implements FileStorageService {
 
             Path targetPath = targetDir.resolve(safeFilename).normalize();
 
-            // Path-traversal guard: ensure the resolved path is inside targetDir
             if (!targetPath.startsWith(targetDir)) {
                 throw new BadRequestException("Invalid file path");
             }
 
-            try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            try (InputStream in = file.getInputStream()) {
+                Files.copy(in, targetPath, StandardCopyOption.REPLACE_EXISTING);
             }
 
             log.debug("File stored: path={}/{}", path, safeFilename);
             return baseUrl + "/" + path + "/" + safeFilename;
 
+        } catch (BadRequestException e) {
+            throw e;
         } catch (IOException e) {
-            log.error("Failed to store file in path={}: {}", path, e.getMessage());
-            throw new RuntimeException("Failed to store file");
+            log.error("Failed to store file in path={}: {}", path, e.getMessage(), e);
+            throw new InvalidOperationException("Failed to store file. Please try again.");
         }
     }
 
@@ -113,6 +111,30 @@ public class LocalFileStorageService implements FileStorageService {
         }
     }
 
+    private String validateAndResolveType(String detectedMime, String declaredMime) {
+
+        if ("application/zip".equals(detectedMime)) {
+            if (declaredMime != null && ZIP_BASED_OFFICE_MIMES.contains(declaredMime)) {
+                return declaredMime; // trust declared for office formats
+            }
+            throw new BadRequestException(
+                    "File type not allowed. Supported types: JPEG, PNG, WEBP, PDF, DOCX, PPTX");
+        }
+
+        if (declaredMime != null && !declaredMime.equals(detectedMime)) {
+            log.warn("Content-Type mismatch — declared={}, detected={}", declaredMime, detectedMime);
+            throw new BadRequestException(
+                    "File content does not match the declared content type");
+        }
+
+        if (!ALLOWED_TYPES.containsKey(detectedMime)) {
+            throw new BadRequestException(
+                    "File type not allowed. Supported types: JPEG, PNG, WEBP, PDF, DOCX, PPTX");
+        }
+
+        return detectedMime;
+    }
+
     private byte[] readHeaderBytes(MultipartFile file) {
         try (InputStream is = file.getInputStream()) {
             byte[] header = new byte[12];
@@ -129,7 +151,6 @@ public class LocalFileStorageService implements FileStorageService {
             throw new BadRequestException("Unable to read the uploaded file");
         }
     }
-
 
     private static String detectMimeFromBytes(byte[] b) {
         if (b.length < 4) {
@@ -171,6 +192,11 @@ public class LocalFileStorageService implements FileStorageService {
                 && (b[3] & 0xFF) == 0x46) {
             return "application/pdf";
         }
+
+        // ZIP / Office Open XML (docx, pptx, xlsx): PK (50 4B 03 04)
+        if ((b[0] & 0xFF) == 0x50 && (b[1] & 0xFF) == 0x4B
+                && (b[2] & 0xFF) == 0x03 && (b[3] & 0xFF) == 0x04)
+            return "application/zip";
 
         return "application/octet-stream";
     }
