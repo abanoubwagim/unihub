@@ -10,12 +10,12 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate
+    open-in-view: false  
+    show-sql: false
     properties:
       hibernate:
         format_sql: false
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
   mail:
     host: smtp.gmail.com
@@ -74,6 +74,20 @@ spring:
             user-info-uri: https://graph.microsoft.com/oidc/userinfo
             jwk-set-uri: https://login.microsoftonline.com/common/discovery/v2.0/keys
             user-name-attribute: sub
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    # Connection resilience
+    connection-timeout: 5000
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000
+        max-attempts: 3
+        multiplier: 2          
 
 server:
   port: ${SERVER_PORT:8080}
@@ -83,6 +97,10 @@ jwt:
   expiration: ${JWT_EXPIRATION:86400000} # 1 day in milliseconds
 
 storage:
+  s3:
+    bucket: ${S3_BUCKET}
+    region: ${S3_REGION:eu-central-1}
+    base-url: ${S3_BASE_URL}
   local:
     base-path: ${STORAGE_PATH:uploads}
     base-url: ${STORAGE_BASE_URL:http://localhost:8080}
@@ -90,6 +108,10 @@ storage:
 # App-level config
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  rate-limit:
+    login:
+      max-attempts: ${LOGIN_RATE_LIMIT_MAX_ATTEMPTS:10}
+      window-seconds: ${LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
 
 management:
   endpoints:
