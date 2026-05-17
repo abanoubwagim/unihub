@@ -1,6 +1,7 @@
 package com.unihub.identity.application.impl;
 
 import com.unihub.identity.api.dto.ForgotPasswordRequest;
+import com.unihub.identity.application.event.PasswordResetRequestedEvent;
 import com.unihub.identity.domain.enums.AuthProvider;
 import com.unihub.identity.domain.enums.Role;
 import com.unihub.identity.domain.enums.UserStatus;
@@ -8,7 +9,6 @@ import com.unihub.identity.domain.model.PasswordResetToken;
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
-import com.unihub.shared.exception.BadRequestException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +17,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
@@ -41,7 +42,7 @@ class ForgotPasswordUseCaseTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private ForgotPasswordEmailSender emailSender;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ForgotPasswordUseCaseImpl forgotPasswordUseCase;
@@ -81,7 +82,11 @@ class ForgotPasswordUseCaseTest {
         assertThat(captor.getValue().isUsed()).isFalse();
         assertThat(captor.getValue().getAttempts()).isZero();
 
-        verify(emailSender).sendResetEmail(eq("test@example.com"), anyString());
+        ArgumentCaptor<PasswordResetRequestedEvent> eventCaptor = ArgumentCaptor
+                .forClass(PasswordResetRequestedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().email()).isEqualTo("test@example.com");
+        assertThat(eventCaptor.getValue().otp()).isNotBlank();
     }
 
     @Test
@@ -93,7 +98,7 @@ class ForgotPasswordUseCaseTest {
                 () -> forgotPasswordUseCase.forgotPassword(new ForgotPasswordRequest("unknown@example.com")));
 
         verify(tokenRepository, never()).save(any());
-        verify(emailSender, never()).sendResetEmail(any(), any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -112,12 +117,11 @@ class ForgotPasswordUseCaseTest {
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(activeUser));
         when(tokenRepository.findByUserId(userId)).thenReturn(Optional.of(recentToken));
 
-        assertThatThrownBy(() -> forgotPasswordUseCase.forgotPassword(new ForgotPasswordRequest("test@example.com")))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("wait");
+        assertThatNoException().isThrownBy(
+                () -> forgotPasswordUseCase.forgotPassword(new ForgotPasswordRequest("test@example.com")));
 
         verify(tokenRepository, never()).save(any());
-        verify(emailSender, never()).sendResetEmail(any(), any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -142,7 +146,7 @@ class ForgotPasswordUseCaseTest {
                 () -> forgotPasswordUseCase.forgotPassword(new ForgotPasswordRequest("test@example.com")));
 
         verify(tokenRepository).save(same(oldToken));
-        verify(emailSender).sendResetEmail(eq("test@example.com"), anyString());
+        verify(eventPublisher).publishEvent(any(PasswordResetRequestedEvent.class));
     }
 
     @Test
@@ -165,7 +169,6 @@ class ForgotPasswordUseCaseTest {
 
         forgotPasswordUseCase.forgotPassword(new ForgotPasswordRequest("test@example.com"));
 
-        // After resetFor() is called, the token should be reset
         assertThat(oldToken.getOtpHash()).isEqualTo("freshHash");
         assertThat(oldToken.isUsed()).isFalse();
         assertThat(oldToken.getAttempts()).isZero();
@@ -195,7 +198,6 @@ class ForgotPasswordUseCaseTest {
 
         ArgumentCaptor<PasswordResetToken> captor = ArgumentCaptor.forClass(PasswordResetToken.class);
         verify(tokenRepository).save(captor.capture());
-        // The raw OTP must NOT be stored — only the hash
         assertThat(captor.getValue().getOtpHash()).isEqualTo("bcryptHash");
         assertThat(captor.getValue().getOtpHash()).doesNotMatch("\\d{6}");
     }
