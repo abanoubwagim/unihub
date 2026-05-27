@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -64,7 +63,6 @@ public class ResendVerificationUseCaseImpl implements ResendVerificationUseCase 
             token.refresh(otpHash, IdentityConstants.OTP_EXPIRY_MINUTES);
         } else {
             token = EmailVerificationToken.builder()
-                    .id(UUID.randomUUID())
                     .userId(user.getId())
                     .otpHash(otpHash)
                     .expiresAt(LocalDateTime.now().plusMinutes(IdentityConstants.OTP_EXPIRY_MINUTES))
@@ -84,7 +82,7 @@ public class ResendVerificationUseCaseImpl implements ResendVerificationUseCase 
             throw new BadRequestException("Please wait before requesting a new code");
         }
 
-        
+
         eventPublisher.publishEvent(
                 new EmailVerificationRequestedEvent(user.getId(), user.getEmail(), otp));
 

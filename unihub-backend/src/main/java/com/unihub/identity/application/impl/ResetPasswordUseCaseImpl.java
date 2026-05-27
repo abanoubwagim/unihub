@@ -28,7 +28,7 @@ public class ResetPasswordUseCaseImpl implements ResetPasswordUseCase {
     private final PasswordEncoder passwordEncoder;
     private final TokenBlacklistService tokenBlacklistService;
 
-    @Value("${jwt.expiration:86400000}")
+    @Value("${jwt.expiration}")
     private long jwtExpirationMs;
 
     @Override

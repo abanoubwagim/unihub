@@ -23,20 +23,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    private final JwtService jwtService;
-    private final StringRedisTemplate redisTemplate;
-
     private static final String OAUTH2_CODE_PREFIX = "oauth2:code:";
     private static final Duration CODE_TTL = Duration.ofSeconds(60);
     private static final String OAUTH2_CALLBACK_PATH = "/oauth2/callback";
-
-    @Value("${app.frontend-url:http://localhost:4200}")
+    private final JwtService jwtService;
+    private final StringRedisTemplate redisTemplate;
+    @Value("${app.frontend-url}")
     private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
-            HttpServletResponse response,
-            Authentication authentication) throws IOException {
+                                        HttpServletResponse response,
+                                        Authentication authentication) throws IOException {
 
         if (!(authentication.getPrincipal() instanceof UniHubOAuth2User oAuth2User)) {
             log.error("OAuth2SuccessHandler received unexpected principal type: {}",

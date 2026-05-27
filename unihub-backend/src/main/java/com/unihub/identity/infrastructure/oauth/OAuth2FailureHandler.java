@@ -17,15 +17,14 @@ import java.net.URI;
 @Component
 public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler {
 
-    @Value("${app.frontend-url:http://localhost:4200}")
-    private String frontendUrl;
-
     private static final String OAUTH2_CALLBACK_PATH = "/oauth2/callback";
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
 
     @Override
     public void onAuthenticationFailure(HttpServletRequest request,
-            HttpServletResponse response,
-            AuthenticationException exception) throws IOException {
+                                        HttpServletResponse response,
+                                        AuthenticationException exception) throws IOException {
 
         log.warn("OAuth2 authentication failed: {}", exception.getMessage());
 

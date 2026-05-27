@@ -1,6 +1,7 @@
 package com.unihub.identity.application.impl;
 
 import com.unihub.identity.api.dto.VerifyEmailRequest;
+import com.unihub.identity.application.event.EmailVerifiedEvent;
 import com.unihub.identity.application.usecase.VerifyEmailUseCase;
 import com.unihub.identity.domain.config.IdentityConstants;
 import com.unihub.identity.domain.model.EmailVerificationToken;
@@ -12,6 +13,7 @@ import com.unihub.shared.exception.NotFoundException;
 import com.unihub.shared.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ public class VerifyEmailUseCaseImpl implements VerifyEmailUseCase {
     private final UserRepository userRepository;
     private final EmailVerificationTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(noRollbackFor = BadRequestException.class)
@@ -47,12 +50,12 @@ public class VerifyEmailUseCaseImpl implements VerifyEmailUseCase {
 
         if (token.isExpired()) {
             log.warn("Email verification failed — token expired — userId={}", user.getId());
-            throw new BadRequestException("Verification code has expired. Please request a new one");
+            throw new BadRequestException("Verification code has expired.");
         }
 
         if (token.getAttempts() >= IdentityConstants.MAX_OTP_ATTEMPTS) {
             log.warn("Email verification locked — max attempts reached — userId={}", user.getId());
-            throw new UnauthorizedException("Too many attempts. Please request a new verification code");
+            throw new UnauthorizedException("Too many attempts. Please Contact Support Team.");
         }
 
         token.incrementAttempts();
@@ -70,6 +73,8 @@ public class VerifyEmailUseCaseImpl implements VerifyEmailUseCase {
         user.activate();
         userRepository.save(user);
 
-        log.info("Email verified successfully — userId={}", user.getId()); 
+        eventPublisher.publishEvent(new EmailVerifiedEvent(user.getId(), user.getRole()));
+        
+        log.info("Email verified successfully — userId={}", user.getId());
     }
 }

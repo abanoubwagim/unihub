@@ -1,13 +1,9 @@
 package com.unihub.identity.application.impl;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.unihub.identity.api.dto.AuthenticationResult;
 import com.unihub.identity.api.dto.LoginRequest;
-import com.unihub.identity.api.dto.LoginResponse;
 import com.unihub.identity.application.usecase.LoginUserUseCase;
+import com.unihub.identity.application.usecase.RefreshTokenUseCase;
 import com.unihub.identity.domain.enums.AuthProvider;
 import com.unihub.identity.domain.enums.UserStatus;
 import com.unihub.identity.domain.model.User;
@@ -15,6 +11,11 @@ import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.UnauthorizedException;
 import com.unihub.shared.security.JwtService;
 import com.unihub.shared.security.JwtSubject;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -24,10 +25,11 @@ public class LoginUserUseCaseImpl implements LoginUserUseCase {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshTokenUseCase refreshTokenUseCase;
 
     @Override
-    @Transactional(readOnly = true)
-    public LoginResponse login(LoginRequest request) {
+    @Transactional
+    public AuthenticationResult login(LoginRequest request) {
 
 
         // Get User
@@ -65,10 +67,15 @@ public class LoginUserUseCaseImpl implements LoginUserUseCase {
             throw new UnauthorizedException("User is suspended");
         }
 
-        String token = jwtService.generateToken(
+        String accessToken = jwtService.generateToken(
                 new JwtSubject(user.getId(), user.getEmail(), user.getRole().name()));
 
+        long expiresIn = jwtService.getExpirationSeconds(accessToken);
+
+        RefreshTokenUseCase.CreationResult refreshResult =
+                refreshTokenUseCase.create(user.getId());
+
         log.info("Login successful — userId={}, role={}", user.getId(), user.getRole());
-        return new LoginResponse(token, "Bearer");
+        return new AuthenticationResult(accessToken, refreshResult.rawToken(), expiresIn);
     }
 }

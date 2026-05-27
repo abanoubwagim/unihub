@@ -5,8 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 
 public record ResendVerificationRequest(
 
-    @Email
-    @NotBlank
-    String email
+        @Email
+        @NotBlank(message = "Email is required")
+        String email
 ) {
 }

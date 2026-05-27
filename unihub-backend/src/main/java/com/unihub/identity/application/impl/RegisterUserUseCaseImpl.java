@@ -29,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -51,15 +50,16 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
         if (request.role() == Role.ADMIN) {
             throw new BadRequestException("Cannot register as ADMIN");
         }
-        if (!request.password().equals(request.confirmPassword())) {
-            throw new BadRequestException("Passwords do not match");
-        }
+
         if (userRepository.existsByEmail(email)) {
             throw new ConflictException("Email is already registered");
         }
 
+        if (!request.confirmPassword().equals(request.password())) {
+            throw new BadRequestException("Passwords do not match");
+        }
+
         User user = User.builder()
-                .id(UUID.randomUUID())
                 .email(email)
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .role(request.role())
@@ -70,19 +70,13 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
-        try {
-            userRepository.save(user);
-        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            log.warn("Concurrent registration conflict — email={}", email);
-            throw new ConflictException("Email is already registered");
-        }
+        userRepository.save(user);
 
         try {
-            UserRegisteredEvent event = new UserRegisteredEvent(user.getId(), user.getRole());
+            UserRegisteredEvent event = new UserRegisteredEvent(user.getId());
             String payload = objectMapper.writeValueAsString(event);
 
             OutboxMessage outboxMessage = OutboxMessage.builder()
-                    .id(UUID.randomUUID())
                     .exchange(RabbitMqConfig.USER_REGISTERED_EXCHANGE)
                     .routingKey("")
                     .payload(payload)
@@ -103,7 +97,6 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
         String otpHash = passwordEncoder.encode(otp);
 
         EmailVerificationToken token = EmailVerificationToken.builder()
-                .id(UUID.randomUUID())
                 .userId(user.getId())
                 .otpHash(otpHash)
                 .expiresAt(LocalDateTime.now().plusMinutes(IdentityConstants.OTP_EXPIRY_MINUTES))

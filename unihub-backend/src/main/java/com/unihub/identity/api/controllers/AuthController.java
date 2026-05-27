@@ -1,50 +1,29 @@
 package com.unihub.identity.api.controllers;
 
-import java.util.UUID;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.unihub.identity.api.dto.ExchangeOAuth2CodeRequest;
-import com.unihub.identity.api.dto.ForgotPasswordRequest;
-import com.unihub.identity.api.dto.LoginRequest;
-import com.unihub.identity.api.dto.LoginResponse;
-import com.unihub.identity.api.dto.OAuth2TokenResponse;
-import com.unihub.identity.api.dto.RegisterRequest;
-import com.unihub.identity.api.dto.RegisterResponse;
-import com.unihub.identity.api.dto.ResendVerificationRequest;
-import com.unihub.identity.api.dto.ResetPasswordRequest;
-import com.unihub.identity.api.dto.UserResponse;
-import com.unihub.identity.api.dto.VerifyEmailRequest;
-import com.unihub.identity.api.dto.VerifyResetOtpRequest;
-import com.unihub.identity.api.dto.VerifyResetOtpResponse;
-import com.unihub.identity.application.usecase.ExchangeOAuth2CodeUseCase;
-import com.unihub.identity.application.usecase.ForgotPasswordUseCase;
-import com.unihub.identity.application.usecase.GetCurrentUserUseCase;
-import com.unihub.identity.application.usecase.LoginUserUseCase;
-import com.unihub.identity.application.usecase.LogoutUseCase;
-import com.unihub.identity.application.usecase.RegisterUserUseCase;
-import com.unihub.identity.application.usecase.ResendVerificationUseCase;
-import com.unihub.identity.application.usecase.ResetPasswordUseCase;
-import com.unihub.identity.application.usecase.VerifyEmailUseCase;
-import com.unihub.identity.application.usecase.VerifyResetOtpUseCase;
-
-import org.springframework.security.core.Authentication;
-import org.springframework.validation.annotation.Validated;
-
+import com.unihub.identity.api.dto.*;
+import com.unihub.identity.application.usecase.*;
+import com.unihub.shared.exception.InvalidTokenException;
+import com.unihub.shared.exception.SecurityViolationException;
+import com.unihub.shared.util.CookieUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -57,18 +36,74 @@ public class AuthController {
     private final ResetPasswordUseCase resetPasswordUseCase;
     private final VerifyResetOtpUseCase verifyResetOtpUseCase;
     private final LogoutUseCase logoutUseCase;
+    private final TokenRotationUseCase tokenRotationUseCase;
     private final ExchangeOAuth2CodeUseCase exchangeOAuth2CodeUseCase;
 
+    @Value("${jwt.refresh-expiration-seconds}")
+    private long refreshExpirationSeconds;
+
+
     @PostMapping("/login")
-    public LoginResponse login(
-            @Valid @RequestBody LoginRequest request) {
-        return loginUserUseCase.login(request);
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+
+        AuthenticationResult result = loginUserUseCase.login(request);
+
+        ResponseCookie refreshCookie =
+                CookieUtil.buildRefreshCookie(result.rawRefreshToken(), refreshExpirationSeconds);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(LoginResponse.from(result));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponse> refresh(HttpServletRequest request) {
+
+        String rawRefreshToken = CookieUtil.extractRefreshToken(request)
+                .orElseThrow(() -> new InvalidTokenException("Refresh token cookie is missing"));
+
+        AuthenticationResult result;
+        try {
+            result = tokenRotationUseCase.refresh(rawRefreshToken);
+        } catch (SecurityViolationException | InvalidTokenException e) {
+            ResponseCookie expiredCookie = CookieUtil.buildExpiredRefreshCookie();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
+                    .build();
+        }
+
+        // Rotation succeeded — send rotated refresh token as new cookie
+        ResponseCookie newRefreshCookie =
+                CookieUtil.buildRefreshCookie(result.rawRefreshToken(), refreshExpirationSeconds);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, newRefreshCookie.toString())
+                .body(LoginResponse.from(result));
+    }
+
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+
+        String rawAccessToken = extractBearerToken(request);
+        String rawRefreshToken = CookieUtil.extractRefreshToken(request).orElse(null);
+
+        if (rawAccessToken != null || rawRefreshToken != null) {
+            logoutUseCase.logout(rawAccessToken, rawRefreshToken);
+        }
+
+        // Clear the cookie regardless of whether tokens were found
+        ResponseCookie expiredCookie = CookieUtil.buildExpiredRefreshCookie();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())
+                .body("Logged out successfully");
     }
 
     @PostMapping("/register")
-    public RegisterResponse register(
-            @Valid @RequestBody RegisterRequest request) {
-        return registerUserUseCase.register(request);
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+        RegisterResponse response = registerUserUseCase.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/verify-email")
@@ -84,9 +119,9 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public UserResponse me(Authentication authentication) {
+    public ResponseEntity<UserResponse> me(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
-        return getCurrentUserUseCase.getCurrentUser(userId);
+        return ResponseEntity.ok(getCurrentUserUseCase.getCurrentUser(userId));
     }
 
     @PostMapping("/forgot-password")
@@ -102,23 +137,23 @@ public class AuthController {
     }
 
     @PostMapping("/verify-reset-otp")
-    public VerifyResetOtpResponse verifyResetOtp(@Valid @RequestBody VerifyResetOtpRequest request) {
-        return verifyResetOtpUseCase.verifyResetOtp(request);
+    public ResponseEntity<VerifyResetOtpResponse> verifyResetOtp(
+            @Valid @RequestBody VerifyResetOtpRequest request) {
+        return ResponseEntity.ok(verifyResetOtpUseCase.verifyResetOtp(request));
     }
 
     @PostMapping("/oauth2/token")
-    public OAuth2TokenResponse exchangeOAuth2Code(
+    public ResponseEntity<OAuth2TokenResponse> exchangeOAuth2Code(
             @Valid @RequestBody ExchangeOAuth2CodeRequest request) {
-        return exchangeOAuth2CodeUseCase.exchange(request.code());
+        return ResponseEntity.ok(exchangeOAuth2CodeUseCase.exchange(request.code()));
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) {
+    private String extractBearerToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            logoutUseCase.logout(authHeader.substring(7));
+            return authHeader.substring(7);
         }
-        return ResponseEntity.ok("Logged out successfully");
+        return null;
     }
 
 }

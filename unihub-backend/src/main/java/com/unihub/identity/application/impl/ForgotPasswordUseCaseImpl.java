@@ -10,18 +10,14 @@ import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.BadRequestException;
 import com.unihub.shared.util.OtpGenerator;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -41,6 +37,7 @@ public class ForgotPasswordUseCaseImpl implements ForgotPasswordUseCase {
         String email = request.email().trim().toLowerCase();
 
         userRepository.findByEmail(email).ifPresent(user -> {
+
             if (user.getAuthProvider() != AuthProvider.LOCAL) {
                 log.debug("Password reset ignored for OAuth account — userId={}", user.getId());
                 return;
@@ -60,39 +57,27 @@ public class ForgotPasswordUseCaseImpl implements ForgotPasswordUseCase {
     }
 
     private void processReset(UUID userId, String email) {
-
         String otp = OtpGenerator.generate();
         String otpHash = passwordEncoder.encode(otp);
+        LocalDateTime now = LocalDateTime.now();
 
-        Optional<PasswordResetToken> existing = tokenRepository.findByUserId(userId);
-
-        try {
-            if (existing.isPresent()) {
-                enforceRateLimit(existing.get());
-                existing.get().resetFor(otpHash);
-                tokenRepository.save(existing.get());
-                log.debug("Password reset token refreshed — userId={}", userId);
-            } else {
-                PasswordResetToken token = PasswordResetToken.builder()
-                        .id(UUID.randomUUID())
+        PasswordResetToken token = tokenRepository.findByUserId(userId)
+                .map(existing -> {
+                    enforceRateLimit(existing);
+                    existing.resetFor(otpHash);
+                    return existing;
+                })
+                .orElseGet(() -> PasswordResetToken.builder()
                         .userId(userId)
                         .otpHash(otpHash)
-                        .expiresAt(LocalDateTime.now().plusMinutes(IdentityConstants.OTP_EXPIRY_MINUTES))
+                        .expiresAt(now.plusMinutes(IdentityConstants.OTP_EXPIRY_MINUTES))
+                        .createdAt(now)
                         .used(false)
                         .attempts(0)
-                        .createdAt(LocalDateTime.now())
-                        .build();
-                tokenRepository.save(token);
-                log.debug("New password reset token created — userId={}", userId);
-            }
-        } catch (OptimisticLockingFailureException e) {
-            log.warn("Concurrent forgot-password request (version conflict) — userId={}", userId);
-            throw new BadRequestException("Please wait before requesting a new code");
-        } catch (DataIntegrityViolationException e) {
-            log.warn("Concurrent forgot-password request (insert conflict) — userId={}", userId);
-            throw new BadRequestException("Please wait before requesting a new code");
-        }
+                        .build());
 
+        tokenRepository.save(token);
+        log.debug("Password reset token generated — userId={}", userId);
         eventPublisher.publishEvent(new PasswordResetRequestedEvent(userId, email, otp));
     }
 

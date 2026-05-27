@@ -2,7 +2,6 @@ package com.unihub.shared.storage;
 
 import com.unihub.shared.exception.BadRequestException;
 import com.unihub.shared.exception.InvalidOperationException;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
@@ -24,12 +23,6 @@ import java.util.UUID;
 @Profile("!prod")
 public class LocalFileStorageService implements FileStorageService {
 
-    @Value("${storage.local.base-path:uploads}")
-    private String basePath;
-
-    @Value("${storage.local.base-url:http://localhost:8080}")
-    private String baseUrl;
-
     private static final Map<String, String> ALLOWED_TYPES = Map.of(
             "image/jpeg", ".jpg",
             "image/png", ".png",
@@ -43,6 +36,59 @@ public class LocalFileStorageService implements FileStorageService {
             "application/vnd.openxmlformats-officedocument.presentationml.presentation");
 
     private static final long MAX_SIZE_BYTES = 10L * 1024 * 1024; // 10 MB
+    @Value("${storage.local.base-path:uploads}")
+    private String basePath;
+    @Value("${storage.local.base-url:http://localhost:8080}")
+    private String baseUrl;
+
+    private static String detectMimeFromBytes(byte[] b) {
+        if (b.length < 4) {
+            return "application/octet-stream";
+        }
+
+        // JPEG: FF D8 FF
+        if ((b[0] & 0xFF) == 0xFF
+                && (b[1] & 0xFF) == 0xD8
+                && (b[2] & 0xFF) == 0xFF) {
+            return "image/jpeg";
+        }
+
+        // PNG: 89 50 4E 47 0D 0A 1A 0A
+        if ((b[0] & 0xFF) == 0x89
+                && (b[1] & 0xFF) == 0x50
+                && (b[2] & 0xFF) == 0x4E
+                && (b[3] & 0xFF) == 0x47) {
+            return "image/png";
+        }
+
+        // WebP: RIFF (offset 0-3) + WEBP (offset 8-11)
+        if (b.length >= 12
+                && (b[0] & 0xFF) == 0x52 // R
+                && (b[1] & 0xFF) == 0x49 // I
+                && (b[2] & 0xFF) == 0x46 // F
+                && (b[3] & 0xFF) == 0x46 // F
+                && (b[8] & 0xFF) == 0x57 // W
+                && (b[9] & 0xFF) == 0x45 // E
+                && (b[10] & 0xFF) == 0x42 // B
+                && (b[11] & 0xFF) == 0x50) { // P
+            return "image/webp";
+        }
+
+        // PDF: %PDF (25 50 44 46)
+        if ((b[0] & 0xFF) == 0x25
+                && (b[1] & 0xFF) == 0x50
+                && (b[2] & 0xFF) == 0x44
+                && (b[3] & 0xFF) == 0x46) {
+            return "application/pdf";
+        }
+
+        // ZIP / Office Open XML (docx, pptx, xlsx): PK (50 4B 03 04)
+        if ((b[0] & 0xFF) == 0x50 && (b[1] & 0xFF) == 0x4B
+                && (b[2] & 0xFF) == 0x03 && (b[3] & 0xFF) == 0x04)
+            return "application/zip";
+
+        return "application/octet-stream";
+    }
 
     @Override
     public String upload(MultipartFile file, String path) {
@@ -79,8 +125,6 @@ public class LocalFileStorageService implements FileStorageService {
             log.debug("File stored: path={}/{}", path, safeFilename);
             return baseUrl + "/" + path + "/" + safeFilename;
 
-        } catch (BadRequestException e) {
-            throw e;
         } catch (IOException e) {
             log.error("Failed to store file in path={}: {}", path, e.getMessage(), e);
             throw new InvalidOperationException("Failed to store file. Please try again.");
@@ -150,54 +194,5 @@ public class LocalFileStorageService implements FileStorageService {
             log.error("Failed to read file header bytes: {}", e.getMessage());
             throw new BadRequestException("Unable to read the uploaded file");
         }
-    }
-
-    private static String detectMimeFromBytes(byte[] b) {
-        if (b.length < 4) {
-            return "application/octet-stream";
-        }
-
-        // JPEG: FF D8 FF
-        if ((b[0] & 0xFF) == 0xFF
-                && (b[1] & 0xFF) == 0xD8
-                && (b[2] & 0xFF) == 0xFF) {
-            return "image/jpeg";
-        }
-
-        // PNG: 89 50 4E 47 0D 0A 1A 0A
-        if ((b[0] & 0xFF) == 0x89
-                && (b[1] & 0xFF) == 0x50
-                && (b[2] & 0xFF) == 0x4E
-                && (b[3] & 0xFF) == 0x47) {
-            return "image/png";
-        }
-
-        // WebP: RIFF (offset 0-3) + WEBP (offset 8-11)
-        if (b.length >= 12
-                && (b[0] & 0xFF) == 0x52 // R
-                && (b[1] & 0xFF) == 0x49 // I
-                && (b[2] & 0xFF) == 0x46 // F
-                && (b[3] & 0xFF) == 0x46 // F
-                && (b[8] & 0xFF) == 0x57 // W
-                && (b[9] & 0xFF) == 0x45 // E
-                && (b[10] & 0xFF) == 0x42 // B
-                && (b[11] & 0xFF) == 0x50) { // P
-            return "image/webp";
-        }
-
-        // PDF: %PDF (25 50 44 46)
-        if ((b[0] & 0xFF) == 0x25
-                && (b[1] & 0xFF) == 0x50
-                && (b[2] & 0xFF) == 0x44
-                && (b[3] & 0xFF) == 0x46) {
-            return "application/pdf";
-        }
-
-        // ZIP / Office Open XML (docx, pptx, xlsx): PK (50 4B 03 04)
-        if ((b[0] & 0xFF) == 0x50 && (b[1] & 0xFF) == 0x4B
-                && (b[2] & 0xFF) == 0x03 && (b[3] & 0xFF) == 0x04)
-            return "application/zip";
-
-        return "application/octet-stream";
     }
 }

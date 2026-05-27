@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 
 @Slf4j
@@ -39,11 +38,10 @@ class OAuthUserCreator {
 
     private void writeRegistrationEventToOutbox(User user) {
         try {
-            UserRegisteredEvent event = new UserRegisteredEvent(user.getId(), user.getRole());
+            UserRegisteredEvent event = new UserRegisteredEvent(user.getId());
             String payload = objectMapper.writeValueAsString(event);
 
             OutboxMessage outboxMessage = OutboxMessage.builder()
-                    .id(UUID.randomUUID())
                     .exchange(RabbitMqConfig.USER_REGISTERED_EXCHANGE)
                     .routingKey("")
                     .payload(payload)
@@ -55,7 +53,7 @@ class OAuthUserCreator {
             outboxMessageRepository.save(outboxMessage);
 
         } catch (JsonProcessingException e) {
-            
+
             throw new IllegalStateException(
                     "Failed to serialize UserRegisteredEvent for outbox — userId=" + user.getId(), e);
         }
