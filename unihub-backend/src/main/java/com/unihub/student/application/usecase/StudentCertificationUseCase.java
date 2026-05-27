@@ -6,8 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.unihub.shared.dto.PageResponse;
-import com.unihub.student.api.dto.CertificationRequest;
-import com.unihub.student.api.dto.CertificationResponse;
+import com.unihub.student.api.dto.req.CertificationRequest;
+import com.unihub.student.api.dto.res.CertificationResponse;
 
 public interface StudentCertificationUseCase {
 

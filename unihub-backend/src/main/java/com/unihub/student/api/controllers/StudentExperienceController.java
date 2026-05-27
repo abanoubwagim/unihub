@@ -1,27 +1,25 @@
 package com.unihub.student.api.controllers;
 
-import java.util.Set;
-import java.util.UUID;
-
+import com.unihub.shared.dto.PageResponse;
+import com.unihub.student.api.dto.req.ExperienceRequest;
+import com.unihub.student.api.dto.res.ExperienceResponse;
+import com.unihub.student.application.usecase.StudentExperienceUseCase;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.data.domain.Pageable;
 
-import com.unihub.student.api.dto.ExperienceRequest;
-import com.unihub.student.api.dto.ExperienceResponse;
-import com.unihub.student.application.usecase.StudentExperienceUseCase;
-import com.unihub.shared.dto.PageResponse;
-
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.Set;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/students/me/experiences")
+@RequestMapping("/api/v1/students/me/experiences")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('STUDENT')")
 public class StudentExperienceController {
@@ -29,12 +27,12 @@ public class StudentExperienceController {
     private final StudentExperienceUseCase experienceUseCase;
 
     @GetMapping
-    public ResponseEntity<PageResponse<ExperienceResponse>> getAll( 
+    public ResponseEntity<PageResponse<ExperienceResponse>> getAll(
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "startDate") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction) { 
+            @RequestParam(defaultValue = "desc") String direction) {
 
         UUID userId = UUID.fromString(authentication.getName());
 
@@ -63,7 +61,7 @@ public class StudentExperienceController {
     @PostMapping
     public ResponseEntity<ExperienceResponse> add(
             Authentication authentication,
-            @RequestBody @Valid ExperienceRequest request) {
+            @Valid @RequestBody ExperienceRequest request) {
         UUID userId = UUID.fromString(authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(experienceUseCase.add(userId, request));
@@ -73,7 +71,7 @@ public class StudentExperienceController {
     public ResponseEntity<ExperienceResponse> update(
             Authentication authentication,
             @PathVariable UUID id,
-            @RequestBody @Valid ExperienceRequest request) {
+            @Valid @RequestBody ExperienceRequest request) {
         UUID userId = UUID.fromString(authentication.getName());
         return ResponseEntity.ok(experienceUseCase.update(userId, id, request));
     }

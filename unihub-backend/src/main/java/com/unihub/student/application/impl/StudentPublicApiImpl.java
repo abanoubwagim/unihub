@@ -5,10 +5,15 @@ import com.unihub.student.application.StudentPublicInfo;
 import com.unihub.student.domain.model.StudentProfile;
 import com.unihub.student.domain.repository.StudentProfileRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +39,13 @@ public class StudentPublicApiImpl implements StudentPublicApi {
                         StudentProfile::getUserId,
                         this::toInfo));
     }
+
+    @Override
+    public Page<StudentPublicInfo> getStudentsByUniversityId(UUID universityId, Pageable pageable) {
+        return studentProfileRepository.findPageByUniversityId(universityId, pageable)
+                .map(this::toInfo);
+    }
+
 
     private StudentPublicInfo toInfo(StudentProfile p) {
         return new StudentPublicInfo(

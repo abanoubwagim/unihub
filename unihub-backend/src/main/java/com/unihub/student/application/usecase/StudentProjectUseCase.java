@@ -5,8 +5,8 @@ import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 
 import com.unihub.shared.dto.PageResponse;
-import com.unihub.student.api.dto.ProjectRequest;
-import com.unihub.student.api.dto.ProjectResponse;
+import com.unihub.student.api.dto.req.ProjectRequest;
+import com.unihub.student.api.dto.res.ProjectResponse;
 
 public interface StudentProjectUseCase {
 

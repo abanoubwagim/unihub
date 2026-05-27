@@ -5,11 +5,11 @@ import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 
 import com.unihub.shared.dto.PageResponse;
-import com.unihub.student.api.dto.ExperienceRequest;
-import com.unihub.student.api.dto.ExperienceResponse;
+import com.unihub.student.api.dto.req.ExperienceRequest;
+import com.unihub.student.api.dto.res.ExperienceResponse;
 
 public interface StudentExperienceUseCase {
-    
+
     ExperienceResponse add(UUID userId, ExperienceRequest request);
 
     ExperienceResponse update(UUID userId, UUID experienceId, ExperienceRequest request);
