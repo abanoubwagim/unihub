@@ -25,27 +25,25 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("VerifyResetOtpUseCase Tests")
 class VerifyResetOtpUseCaseTest {
 
+    private final UUID userId = UUID.randomUUID();
     @Mock
     private UserRepository userRepository;
-
     @Mock
     private PasswordResetTokenRepository tokenRepository;
-
     @Mock
     private PasswordEncoder passwordEncoder;
-
     @InjectMocks
     private VerifyResetOtpUseCaseImpl verifyResetOtpUseCase;
-
-    private final UUID userId = UUID.randomUUID();
     private User activeUser;
     private VerifyResetOtpRequest validRequest;
 
@@ -67,7 +65,6 @@ class VerifyResetOtpUseCaseTest {
 
     private PasswordResetToken buildToken(boolean used, boolean expired, int attempts) {
         return PasswordResetToken.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .otpHash("hashedOtp")
                 .expiresAt(expired
@@ -125,7 +122,7 @@ class VerifyResetOtpUseCaseTest {
         verifyResetOtpUseCase.verifyResetOtp(validRequest);
 
         assertThat(token.isUsed()).isTrue();
-        verify(tokenRepository).save(token);
+        verify(tokenRepository, times(2)).save(token);
     }
 
     @Test

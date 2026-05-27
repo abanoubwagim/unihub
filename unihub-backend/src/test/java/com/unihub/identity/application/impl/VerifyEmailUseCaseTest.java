@@ -1,25 +1,24 @@
 package com.unihub.identity.application.impl;
 
 import com.unihub.identity.api.dto.VerifyEmailRequest;
-import com.unihub.identity.domain.model.EmailVerificationToken;
-import com.unihub.identity.domain.model.User;
+import com.unihub.identity.domain.enums.AuthProvider;
 import com.unihub.identity.domain.enums.Role;
 import com.unihub.identity.domain.enums.UserStatus;
-import com.unihub.identity.domain.enums.AuthProvider;
+import com.unihub.identity.domain.model.EmailVerificationToken;
+import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.EmailVerificationTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.BadRequestException;
 import com.unihub.shared.exception.NotFoundException;
 import com.unihub.shared.exception.UnauthorizedException;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
@@ -27,12 +26,18 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("VerifyEmailUseCase Tests")
 class VerifyEmailUseCaseTest {
+
+    private final UUID userId = UUID.randomUUID();
+
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     @Mock
     private UserRepository userRepository;
@@ -48,7 +53,6 @@ class VerifyEmailUseCaseTest {
 
     private User pendingUser;
     private VerifyEmailRequest validRequest;
-    private final UUID userId = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
@@ -68,7 +72,6 @@ class VerifyEmailUseCaseTest {
 
     private EmailVerificationToken buildToken(boolean used, boolean expired, int attempts) {
         return EmailVerificationToken.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .otpHash("hashedOtp")
                 .expiresAt(expired
@@ -83,7 +86,6 @@ class VerifyEmailUseCaseTest {
     @Test
     @DisplayName("should verify email successfully with correct OTP")
     void shouldVerifyEmailSuccessfully() {
-
         EmailVerificationToken token = buildToken(false, false, 0);
 
         when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(pendingUser));
@@ -94,29 +96,23 @@ class VerifyEmailUseCaseTest {
 
         assertThatNoException().isThrownBy(() -> verifyEmailUseCase.verifyEmail(validRequest));
 
-
+        // user must be verified and activated
         verify(userRepository).save(argThat(u -> u.isEmailVerified() && u.getStatus() == UserStatus.ACTIVE));
 
-        
-        ArgumentCaptor<EmailVerificationToken> tokenCaptor = ArgumentCaptor.forClass(EmailVerificationToken.class);
-        verify(tokenRepository).save(tokenCaptor.capture());
+        verify(tokenRepository, times(2)).save(token);
 
-        EmailVerificationToken savedToken = tokenCaptor.getValue();
-        assertThat(savedToken.isUsed()).isTrue();
-        assertThat(savedToken.getAttempts()).isEqualTo(1);
+        assertThat(token.isUsed()).isTrue();
+        assertThat(token.getAttempts()).isEqualTo(1);
     }
-
 
     @Test
     @DisplayName("should throw NotFoundException when user does not exist")
     void shouldThrowWhenUserNotFound() {
-
         when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> verifyEmailUseCase.verifyEmail(validRequest))
                 .isInstanceOf(NotFoundException.class);
 
-        
         verify(tokenRepository, never()).findByUserId(any());
         verify(userRepository, never()).save(any());
     }
@@ -124,7 +120,6 @@ class VerifyEmailUseCaseTest {
     @Test
     @DisplayName("should throw BadRequestException when email is already verified")
     void shouldThrowWhenAlreadyVerified() {
-
         User alreadyVerifiedUser = User.builder()
                 .id(userId).email("student@example.com")
                 .passwordHash("hashed").role(Role.STUDENT)
@@ -144,7 +139,6 @@ class VerifyEmailUseCaseTest {
     @Test
     @DisplayName("should throw BadRequestException when no token found for user")
     void shouldThrowWhenNoTokenFound() {
-
         when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(pendingUser));
         when(tokenRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
@@ -179,7 +173,7 @@ class VerifyEmailUseCaseTest {
     }
 
     @Test
-    @DisplayName("should throw UnauthorizedException when max attempts (5) reached — and NOT save the token")
+    @DisplayName("should throw UnauthorizedException when max attempts reached — must NOT save token")
     void shouldThrowWhenMaxAttemptsReached() {
         EmailVerificationToken lockedToken = buildToken(false, false, 5);
 
@@ -195,7 +189,7 @@ class VerifyEmailUseCaseTest {
     }
 
     @Test
-    @DisplayName("should throw BadRequestException and increment attempts when OTP is wrong")
+    @DisplayName("should increment attempts and throw BadRequestException when OTP is wrong")
     void shouldThrowAndIncrementAttemptsWhenOtpWrong() {
         EmailVerificationToken token = buildToken(false, false, 2);
 
@@ -207,8 +201,7 @@ class VerifyEmailUseCaseTest {
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Invalid");
 
-        verify(tokenRepository).save(argThat(t -> t.getAttempts() == 3));
-
+        verify(tokenRepository, times(1)).save(argThat(t -> t.getAttempts() == 3));
         verify(userRepository, never()).save(any());
     }
 }

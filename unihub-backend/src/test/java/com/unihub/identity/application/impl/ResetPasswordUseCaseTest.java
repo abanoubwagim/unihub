@@ -9,6 +9,7 @@ import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.BadRequestException;
+import com.unihub.shared.security.TokenBlacklistService;
 import com.unihub.shared.util.TokenHashUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,12 +25,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ResetPasswordUseCase Tests")
 class ResetPasswordUseCaseTest {
+
+    private final UUID userId = UUID.randomUUID();
+
+    private final String plainResetToken = UUID.randomUUID().toString();
+
+    private final String hashedResetToken = TokenHashUtil.sha256(plainResetToken);
 
     @Mock
     private UserRepository userRepository;
@@ -40,12 +48,11 @@ class ResetPasswordUseCaseTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private TokenBlacklistService tokenBlacklistService;
+
     @InjectMocks
     private ResetPasswordUseCaseImpl resetPasswordUseCase;
-
-    private final UUID userId = UUID.randomUUID();
-    private final String plainResetToken = UUID.randomUUID().toString();
-    private final String hashedResetToken = TokenHashUtil.sha256(plainResetToken);
 
     private User buildUser() {
         return User.builder()
@@ -63,13 +70,14 @@ class ResetPasswordUseCaseTest {
     private PasswordResetToken buildValidToken() {
 
         PasswordResetToken token = PasswordResetToken.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .otpHash("someOtpHash")
                 .expiresAt(LocalDateTime.now().plusMinutes(5))
                 .createdAt(LocalDateTime.now())
                 .used(true)
                 .attempts(1)
+                .resetToken(hashedResetToken)
+                .resetTokenExpiresAt(LocalDateTime.now().plusMinutes(5))
                 .build();
         token.setResetToken(hashedResetToken);
         return token;
@@ -124,7 +132,6 @@ class ResetPasswordUseCaseTest {
     @DisplayName("should throw BadRequestException when reset token is expired")
     void shouldThrowWhenResetTokenExpired() {
         PasswordResetToken expiredToken = PasswordResetToken.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .otpHash("hash")
                 .expiresAt(LocalDateTime.now().plusMinutes(5))
@@ -166,7 +173,6 @@ class ResetPasswordUseCaseTest {
     @DisplayName("should throw BadRequestException when resetTokenExpiresAt is null")
     void shouldThrowWhenResetTokenExpiresAtIsNull() {
         PasswordResetToken tokenWithNullExpiry = PasswordResetToken.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .otpHash("hash")
                 .expiresAt(LocalDateTime.now().plusMinutes(5))
