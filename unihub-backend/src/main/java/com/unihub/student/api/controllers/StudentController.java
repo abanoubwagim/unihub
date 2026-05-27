@@ -1,8 +1,13 @@
 package com.unihub.student.api.controllers;
 
-import java.util.List;
-import java.util.UUID;
-
+import com.unihub.student.api.dto.req.SetUniversityRequest;
+import com.unihub.student.api.dto.req.UpdateProfileRequest;
+import com.unihub.student.api.dto.req.UpdateSkillsRequest;
+import com.unihub.student.api.dto.res.*;
+import com.unihub.student.application.usecase.StudentProfileUseCase;
+import com.unihub.student.application.usecase.StudentQueryUseCase;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -11,23 +16,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.unihub.student.api.dto.CertificationResponse;
-import com.unihub.student.api.dto.ExperienceResponse;
-import com.unihub.student.api.dto.GraduationCertResponse;
-import com.unihub.student.api.dto.ProjectResponse;
-import com.unihub.student.api.dto.StudentProfileResponse;
-import com.unihub.student.api.dto.UpdateProfileRequest;
-import com.unihub.student.api.dto.UpdateSkillsRequest;
-import com.unihub.student.api.dto.SetUniversityRequest;
-
-import com.unihub.student.application.usecase.StudentProfileUseCase;
-import com.unihub.student.application.usecase.StudentQueryUseCase;
-
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/students")
+@RequestMapping("/api/v1/students")
 @RequiredArgsConstructor
 public class StudentController {
 
@@ -43,11 +36,12 @@ public class StudentController {
         return ResponseEntity.ok(studentQueryUseCase.getMyProfile(userId));
     }
 
+
     @PutMapping("/me")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<StudentProfileResponse> updateProfile(
             Authentication authentication,
-            @RequestBody @Valid UpdateProfileRequest request) {
+            @Valid @RequestBody UpdateProfileRequest request) {
 
         UUID userId = UUID.fromString(authentication.getName());
         return ResponseEntity.ok(studentProfileUseCase.updateProfile(userId, request));
@@ -57,22 +51,22 @@ public class StudentController {
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<Void> setUniversity(
             Authentication authentication,
-            @RequestBody @Valid SetUniversityRequest request) {
+            @Valid @RequestBody SetUniversityRequest request) {
 
         UUID userId = UUID.fromString(authentication.getName());
-        studentProfileUseCase.setUniversity(userId, request.universityId(), request.majorId());
+        studentProfileUseCase.setUniversityOnce(userId, request.universityId(), request.majorId());
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/me/skills")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<Void> updateSkills(
+    public ResponseEntity<String> updateSkills(
             Authentication authentication,
-            @RequestBody @Valid UpdateSkillsRequest request) {
+            @Valid @RequestBody UpdateSkillsRequest request) {
 
         UUID userId = UUID.fromString(authentication.getName());
         studentProfileUseCase.updateSkills(userId, request.skillIds());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("Skills updated successfully");
     }
 
     @PostMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

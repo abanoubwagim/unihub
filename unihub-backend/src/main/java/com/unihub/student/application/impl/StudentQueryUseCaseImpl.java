@@ -1,33 +1,23 @@
 package com.unihub.student.application.impl;
 
-import java.util.List;
-import java.util.UUID;
-
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.unihub.shared.exception.NotFoundException;
-import com.unihub.student.api.dto.CertificationResponse;
-import com.unihub.student.api.dto.ExperienceResponse;
-import com.unihub.student.api.dto.GraduationCertResponse;
-import com.unihub.student.api.dto.ProjectResponse;
-import com.unihub.student.api.dto.StudentProfileResponse;
+import com.unihub.student.api.dto.res.*;
 import com.unihub.student.application.StudentProfileMapper;
 import com.unihub.student.application.usecase.StudentQueryUseCase;
 import com.unihub.student.domain.enums.GraduationCertificateStatus;
 import com.unihub.student.domain.model.StudentCertification;
 import com.unihub.student.domain.model.StudentExperience;
 import com.unihub.student.domain.model.StudentProject;
-import com.unihub.student.domain.repository.GraduationCertificateRepository;
-import com.unihub.student.domain.repository.StudentCertificationRepository;
-import com.unihub.student.domain.repository.StudentExperienceRepository;
-import com.unihub.student.domain.repository.StudentProfileRepository;
-import com.unihub.student.domain.repository.StudentProjectRepository;
-
+import com.unihub.student.domain.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +42,7 @@ public class StudentQueryUseCaseImpl implements StudentQueryUseCase {
 
     @Override
     public StudentProfileResponse getPublicProfile(UUID studentId) {
-        return studentProfileRepository.findById(studentId)
+        return studentProfileRepository.findByUserId(studentId)
                 .map(mapper::toResponse)
                 .orElseThrow(() -> new NotFoundException("Student not found"));
     }
@@ -133,7 +123,7 @@ public class StudentQueryUseCaseImpl implements StudentQueryUseCase {
     }
 
     private void validateStudentExists(UUID studentId) {
-        if (!studentProfileRepository.existsById(studentId)) {
+        if (!studentProfileRepository.existsByUserId(studentId)) {
             throw new NotFoundException("Student not found");
         }
     }
@@ -146,7 +136,7 @@ public class StudentQueryUseCaseImpl implements StudentQueryUseCase {
                 exp.getJobType(),
                 exp.getStartDate(),
                 exp.getEndDate(),
-                exp.isCurrent(),
+                exp.getCurrent(),
                 exp.getLocation(),
                 exp.getDescription(),
                 exp.getSkills().stream().map(s -> s.getName()).toList());
@@ -159,6 +149,7 @@ public class StudentQueryUseCaseImpl implements StudentQueryUseCase {
                 p.getDescription(),
                 p.getStartDate(),
                 p.getEndDate(),
+                p.getCurrent(),
                 p.getProjectLink(),
                 p.getSkills().stream().map(s -> s.getName()).toList());
     }

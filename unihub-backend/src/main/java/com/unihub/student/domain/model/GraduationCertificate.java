@@ -1,37 +1,31 @@
 package com.unihub.student.domain.model;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import org.hibernate.annotations.CreationTimestamp;
-
 import com.unihub.student.domain.enums.GraduationCertificateStatus;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "graduation_certificates")
-@Getter 
-@Setter 
+@Getter
+@Setter
 @NoArgsConstructor
 public class GraduationCertificate {
-    
-    @Id 
+
+    @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "student_id", nullable = false)
     private UUID studentId;
+
+    @Column(name = "university_id", nullable = false)
+    private UUID universityId;
 
     @Column(name = "file_url")
     private String fileUrl;
@@ -44,7 +38,7 @@ public class GraduationCertificate {
     private String rejectionReason;
 
     @Column(name = "attempt_number", nullable = false)
-    private int attemptNumber;
+    private int attemptNumber = 0;
 
     @CreationTimestamp
     private LocalDateTime submittedAt;

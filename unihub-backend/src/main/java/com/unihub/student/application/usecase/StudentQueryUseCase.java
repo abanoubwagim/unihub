@@ -3,14 +3,14 @@ package com.unihub.student.application.usecase;
 import java.util.List;
 import java.util.UUID;
 
-import com.unihub.student.api.dto.CertificationResponse;
-import com.unihub.student.api.dto.ExperienceResponse;
-import com.unihub.student.api.dto.GraduationCertResponse;
-import com.unihub.student.api.dto.ProjectResponse;
-import com.unihub.student.api.dto.StudentProfileResponse;
+import com.unihub.student.api.dto.res.CertificationResponse;
+import com.unihub.student.api.dto.res.ExperienceResponse;
+import com.unihub.student.api.dto.res.GraduationCertResponse;
+import com.unihub.student.api.dto.res.ProjectResponse;
+import com.unihub.student.api.dto.res.StudentProfileResponse;
 
 public interface StudentQueryUseCase {
-    
+
     StudentProfileResponse getMyProfile(UUID userId);
 
     StudentProfileResponse getPublicProfile(UUID studentId);

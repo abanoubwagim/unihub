@@ -1,36 +1,23 @@
 package com.unihub.student.domain.model;
 
+import com.unihub.shared.enums.JobType;
+import jakarta.persistence.*;
+import lombok.*;
+
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import com.unihub.shared.enums.JobType;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 @Entity
 @Table(name = "student_experiences")
-@Getter 
-@Setter 
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class StudentExperience {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -52,12 +39,13 @@ public class StudentExperience {
     private LocalDate endDate;
 
     @Column(name = "is_current")
-    private boolean current = false;
+    private Boolean current = false;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "job_type", nullable = false)
     private JobType jobType;
 
+    @Column(name = "location")
     private String location;
 
     @Column(columnDefinition = "TEXT")
@@ -65,9 +53,9 @@ public class StudentExperience {
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-        name = "experience_skills",
-        joinColumns = @JoinColumn(name = "experience_id"),
-        inverseJoinColumns = @JoinColumn(name = "skill_id")
+            name = "experience_skills",
+            joinColumns = @JoinColumn(name = "experience_id"),
+            inverseJoinColumns = @JoinColumn(name = "skill_id")
     )
     private Set<Skill> skills = new HashSet<>();
 }

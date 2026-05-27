@@ -1,10 +1,10 @@
 package com.unihub.student.application;
 
-import org.springframework.stereotype.Component;
-
-import com.unihub.student.api.dto.LinkResponse;
-import com.unihub.student.api.dto.StudentProfileResponse;
+import com.unihub.student.api.dto.res.LinkResponse;
+import com.unihub.student.api.dto.res.StudentProfileResponse;
+import com.unihub.student.domain.model.Skill;
 import com.unihub.student.domain.model.StudentProfile;
+import org.springframework.stereotype.Component;
 
 @Component
 public class StudentProfileMapper {
@@ -23,10 +23,9 @@ public class StudentProfileMapper {
                 profile.getCountryId(),
                 profile.getLookingFor(),
                 profile.getGraduationYear(),
-                profile.isVerified(),
-                profile.getSkills().stream().map(s -> s.getName()).toList(),
+                profile.getSkills().stream().map(Skill::getName).toList(),
                 profile.getLinks().stream()
-                        .map(l -> new LinkResponse(l.getLinkType(), l.getLabel(), l.getUrl()))
+                        .map(l -> new LinkResponse(l.getId(), l.getLinkType(), l.getLabel(), l.getUrl()))
                         .toList()
         );
     }

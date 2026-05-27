@@ -1,9 +1,14 @@
 package com.unihub.student.api.controllers;
 
-import java.util.Set;
-import java.util.UUID;
-
+import com.unihub.shared.dto.PageResponse;
+import com.unihub.student.api.dto.req.CertificationRequest;
+import com.unihub.student.api.dto.res.CertificationResponse;
+import com.unihub.student.application.usecase.StudentCertificationUseCase;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -11,19 +16,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
-import com.unihub.shared.dto.PageResponse;
-import com.unihub.student.api.dto.CertificationRequest;
-import com.unihub.student.api.dto.CertificationResponse;
-import com.unihub.student.application.usecase.StudentCertificationUseCase;
-
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.Set;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/students/me/certifications")
+@RequestMapping("/api/v1/students/me/certifications")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('STUDENT')")
 public class StudentCertificationController {
@@ -40,6 +38,7 @@ public class StudentCertificationController {
 
         UUID userId = UUID.fromString(authentication.getName());
 
+        // Protect against invalid sort fields
         if (!Set.of("id", "title", "dateIssued", "issuingOrganization").contains(sortBy)) {
             sortBy = "dateIssued";
         }

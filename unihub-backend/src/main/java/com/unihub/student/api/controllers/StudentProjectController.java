@@ -1,8 +1,11 @@
 package com.unihub.student.api.controllers;
 
-import java.util.Set;
-import java.util.UUID;
-
+import com.unihub.shared.dto.PageResponse;
+import com.unihub.student.api.dto.req.ProjectRequest;
+import com.unihub.student.api.dto.res.ProjectResponse;
+import com.unihub.student.application.usecase.StudentProjectUseCase;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -12,16 +15,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import com.unihub.shared.dto.PageResponse;
-import com.unihub.student.api.dto.ProjectRequest;
-import com.unihub.student.api.dto.ProjectResponse;
-import com.unihub.student.application.usecase.StudentProjectUseCase;
-
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.util.Set;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/students/me/projects")
+@RequestMapping("/api/v1/students/me/projects")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('STUDENT')")
 public class StudentProjectController {
@@ -38,10 +36,11 @@ public class StudentProjectController {
 
         UUID userId = UUID.fromString(authentication.getName());
 
+        // Protect against invalid sort fields
         if (!Set.of("id", "title", "startDate", "endDate").contains(sortBy)) {
             sortBy = "startDate";
         }
-        int safeSize = Math.min(size, 50);
+        int safeSize = Math.min(size, 50); // Max 50 per page
 
         Sort sort = direction.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
@@ -59,14 +58,14 @@ public class StudentProjectController {
 
     @PostMapping
     public ResponseEntity<ProjectResponse> add(Authentication authentication,
-            @RequestBody @Valid ProjectRequest request) {
+                                               @RequestBody @Valid ProjectRequest request) {
         UUID userId = UUID.fromString(authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(projectUseCase.add(userId, request));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ProjectResponse> update(Authentication authentication,
-            @PathVariable UUID id, @RequestBody @Valid ProjectRequest request) {
+                                                  @PathVariable UUID id, @RequestBody @Valid ProjectRequest request) {
         UUID userId = UUID.fromString(authentication.getName());
         return ResponseEntity.ok(projectUseCase.update(userId, id, request));
     }

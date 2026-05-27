@@ -4,8 +4,9 @@ import java.util.UUID;
 
 public record GraduationCertificateApprovedEvent(
 
-    UUID profileId, 
-    UUID userId
+        UUID profileId,
+        UUID userId,
+        UUID universityId
 ) {
 
 }
