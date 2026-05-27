@@ -1,15 +1,13 @@
 package com.unihub.identity.infrastructure.persistence;
 
-import java.util.Optional;
-import java.util.UUID;
-
+import com.unihub.identity.domain.model.PasswordResetToken;
+import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.unihub.identity.domain.model.PasswordResetToken;
-import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
-
-import lombok.RequiredArgsConstructor;
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
@@ -36,7 +34,7 @@ public class PasswordResetTokenRepositoryImpl implements PasswordResetTokenRepos
     @Override
     public Optional<PasswordResetToken> findByResetToken(String resetToken) {
 
-        if(resetToken == null || resetToken.isBlank()) {
+        if (resetToken == null || resetToken.isBlank()) {
             return Optional.empty();
         }
 

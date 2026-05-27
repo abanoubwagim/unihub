@@ -6,13 +6,13 @@ import jakarta.validation.constraints.Size;
 
 public record VerifyEmailRequest(
 
-    @Email
-    @NotBlank
-    String email,
+        @Email
+        @NotBlank(message = "Email is required")
+        String email,
 
-    @NotBlank
-    @Size(min = 6, max = 6, message = "OTP must be 6 digits")
-    String otp
+        @NotBlank
+        @Size(min = 6, max = 6, message = "OTP must be 6 digits")
+        String otp
 ) {
 
 }

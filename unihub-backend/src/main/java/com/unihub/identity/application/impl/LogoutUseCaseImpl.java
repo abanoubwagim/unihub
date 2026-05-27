@@ -1,9 +1,9 @@
 package com.unihub.identity.application.impl;
 
 import com.unihub.identity.application.usecase.LogoutUseCase;
+import com.unihub.identity.application.usecase.RefreshTokenUseCase;
 import com.unihub.shared.security.JwtService;
 import com.unihub.shared.security.TokenBlacklistService;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,20 +15,42 @@ public class LogoutUseCaseImpl implements LogoutUseCase {
 
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final RefreshTokenUseCase refreshTokenUseCase;
+
 
     @Override
-    public void logout(String token) {
+    public void logout(String rawAccessToken) {
+        logout(rawAccessToken, null);
+    }
+
+    @Override
+    public void logout(String rawAccessToken, String rawRefreshToken) {
+        blacklistAccessToken(rawAccessToken);
+        revokeRefreshToken(rawRefreshToken);
+    }
+
+    private void blacklistAccessToken(String rawAccessToken) {
+        if (rawAccessToken == null || rawAccessToken.isBlank()) return;
         try {
-            long ttl = jwtService.getExpirationSeconds(token);
+            long ttl = jwtService.getExpirationSeconds(rawAccessToken);
             if (ttl > 0) {
-                tokenBlacklistService.blacklist(token, ttl);
-                log.debug("Token blacklisted successfully — ttl={}s", ttl);
-            } else {
-                log.debug("Token already expired — skipping blacklist");
+                tokenBlacklistService.blacklist(rawAccessToken, ttl);
             }
         } catch (Exception e) {
-            log.error("Logout blacklist failed — token may be invalid or Redis unavailable. error={}",
-                    e.getMessage());
+            log.warn("Best-effort: failed to blacklist access token during logout — {}", e.getMessage());
+        }
+    }
+
+    private void revokeRefreshToken(String rawRefreshToken) {
+        if (rawRefreshToken == null || rawRefreshToken.isBlank()) return;
+        try {
+            refreshTokenUseCase.findByRawToken(rawRefreshToken)
+                    .ifPresentOrElse(
+                            refreshTokenUseCase::revoke,
+                            () -> log.debug("Logout: refresh token not found in DB (may have already expired)")
+                    );
+        } catch (Exception e) {
+            log.warn("Best-effort: failed to revoke refresh token during logout — {}", e.getMessage());
         }
     }
 }

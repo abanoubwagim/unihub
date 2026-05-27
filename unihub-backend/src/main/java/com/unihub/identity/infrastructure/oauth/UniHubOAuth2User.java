@@ -1,6 +1,7 @@
 package com.unihub.identity.infrastructure.oauth;
 
 import com.unihub.identity.domain.model.User;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -9,7 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-
+@Getter
 public class UniHubOAuth2User implements OAuth2User {
 
     private final User user;
@@ -20,10 +21,6 @@ public class UniHubOAuth2User implements OAuth2User {
         this.attributes = attributes;
     }
 
-
-    public User getUser() {
-        return user;
-    }
 
     @Override
     public Map<String, Object> getAttributes() {

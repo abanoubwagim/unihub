@@ -43,7 +43,7 @@ public class RoleAwareOAuth2AuthorizationRequestResolver
     private void storeRoleInSession(HttpServletRequest request) {
         String roleParam = request.getParameter("role");
         if (roleParam == null || roleParam.isBlank()) {
-            return; 
+            return;
         }
 
         Role role = parseRole(roleParam);
@@ -56,7 +56,7 @@ public class RoleAwareOAuth2AuthorizationRequestResolver
         try {
             Role role = Role.valueOf(roleParam.trim().toUpperCase());
             if (role == Role.ADMIN) {
-                log.warn("OAuth2 role request for ADMIN rejected — defaulting to STUDENT");
+                log.warn("OAuth2 role request for ADMIN rejected — defaulting to STUDENT ");
                 return Role.STUDENT;
             }
             return role;

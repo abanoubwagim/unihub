@@ -6,13 +6,13 @@ import jakarta.validation.constraints.Size;
 
 public record VerifyResetOtpRequest(
 
-    @Email 
-    @NotBlank 
-    String email,
-        
-    @NotBlank 
-    @Size(min = 6, max = 6) 
-    String otp
+        @Email
+        @NotBlank(message = "Email is required")
+        String email,
+
+        @NotBlank(message = "Otp is reuired")
+        @Size(min = 6, max = 6, message = "Otp must be 6 digits")
+        String otp
 ) {
 
 }

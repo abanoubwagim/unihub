@@ -42,7 +42,7 @@ public class UniHubOAuth2UserService extends DefaultOAuth2UserService {
 
         Role requestedRole = resolveRequestedRoleFromSession();
 
-        User user = persistenceService.findOrCreateUser(normalizedEmail, provider, userInfo, requestedRole);
+        User user = persistenceService.findOrCreateUser(normalizedEmail, provider, requestedRole);
 
         log.info("OAuth2 login — provider={}, role={}, userId={}",
                 provider, user.getRole(), user.getId());

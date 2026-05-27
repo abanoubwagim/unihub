@@ -1,12 +1,11 @@
 package com.unihub.identity.infrastructure.persistence;
 
-import java.util.Optional;
-import java.util.UUID;
-
+import com.unihub.identity.domain.model.PasswordResetToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 
-import com.unihub.identity.domain.model.PasswordResetToken;
+import java.util.Optional;
+import java.util.UUID;
 
 public interface JpaPasswordResetTokenRepository extends JpaRepository<PasswordResetToken, UUID> {
 

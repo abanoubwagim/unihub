@@ -4,25 +4,23 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.unihub.identity.application.usecase.DeleteAccountUseCase;
 import com.unihub.identity.domain.enums.AuthProvider;
-import com.unihub.identity.domain.event.UserDeletedEvent;
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.EmailVerificationTokenRepository;
 import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.config.RabbitMqConfig;
+import com.unihub.shared.events.UserDeletedEvent;
 import com.unihub.shared.exception.BadRequestException;
 import com.unihub.shared.exception.NotFoundException;
 import com.unihub.shared.outbox.OutboxMessage;
 import com.unihub.shared.outbox.OutboxMessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -36,10 +34,10 @@ public class DeleteAccountUseCaseImpl implements DeleteAccountUseCase {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final OutboxMessageRepository outboxMessageRepository;
     private final ObjectMapper objectMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
-    @PreAuthorize("isAuthenticated()")
     public void deleteAccount(UUID userId, String password) {
 
         User user = userRepository.findById(userId)
@@ -52,7 +50,6 @@ public class DeleteAccountUseCaseImpl implements DeleteAccountUseCase {
                             "Please revoke access from your OAuth provider settings.");
         }
 
-        // LOCAL accounts
         if (password == null || password.isBlank()) {
             throw new BadRequestException("Password is required to delete account");
         }
@@ -64,27 +61,23 @@ public class DeleteAccountUseCaseImpl implements DeleteAccountUseCase {
         passwordResetTokenRepository.deleteByUserId(userId);
         userRepository.deleteById(userId);
 
+        outboxMessageRepository.save(OutboxMessage.builder()
+                .exchange(RabbitMqConfig.USER_DELETED_EXCHANGE)
+                .routingKey("")
+                .payload(serialize(new UserDeletedEvent(userId)))
+                .payloadType(UserDeletedEvent.class.getName())
+                .build());
+
+        eventPublisher.publishEvent(new UserDeletedEvent(userId));
+        log.info("Account deleted and UserDeletedEvent queued — userId={}", userId);
+    }
+
+    private String serialize(Object event) {
         try {
-            UserDeletedEvent event = new UserDeletedEvent(userId);
-            String payload = objectMapper.writeValueAsString(event);
-
-            OutboxMessage outboxMessage = OutboxMessage.builder()
-                    .id(UUID.randomUUID())
-                    .exchange(RabbitMqConfig.USER_DELETED_EXCHANGE)
-                    .routingKey("")   // FanoutExchange ignores routing key
-                    .payload(payload)
-                    .payloadType(UserDeletedEvent.class.getName())
-                    .createdAt(LocalDateTime.now())
-                    .attempts(0)
-                    .build();
-
-            outboxMessageRepository.save(outboxMessage);
-
+            return objectMapper.writeValueAsString(event);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException(
-                    "Failed to serialize UserDeletedEvent — userId=" + userId, e);
+                    "Serialization failed for " + event.getClass().getSimpleName(), e);
         }
-
-        log.info("Account deleted and UserDeletedEvent queued in outbox — userId={}", userId);
     }
 }

@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -26,7 +25,6 @@ public class OAuthUserPersistenceService {
     @Transactional
     public User findOrCreateUser(String normalizedEmail,
                                  AuthProvider provider,
-                                 OAuth2UserInfo userInfo,
                                  Role requestedRole) {
         return userRepository.findByEmail(normalizedEmail)
                 .map(existing -> handleExistingUser(existing, provider))
@@ -38,14 +36,14 @@ public class OAuthUserPersistenceService {
         if (existing.getAuthProvider() == AuthProvider.LOCAL) {
             throw new OAuth2AuthenticationException(
                     "EMAIL_REGISTERED_WITH_PASSWORD|"
-                    + "An account with this email already exists. "
-                    + "Please login with your email and password.");
+                            + "An account with this email already exists. "
+                            + "Please login with your email and password.");
         }
         if (existing.getAuthProvider() != incomingProvider) {
             throw new OAuth2AuthenticationException(
                     "PROVIDER_MISMATCH|This account is linked to "
-                    + existing.getAuthProvider()
-                    + ". Please login with that provider.");
+                            + existing.getAuthProvider()
+                            + ". Please login with that provider.");
         }
         if (existing.getStatus() == UserStatus.BANNED) {
             throw new OAuth2AuthenticationException(
@@ -61,10 +59,9 @@ public class OAuthUserPersistenceService {
     private User createNewOAuthUser(String email, AuthProvider provider, Role role) {
         LocalDateTime now = LocalDateTime.now();
         User newUser = User.builder()
-                .id(UUID.randomUUID())
                 .email(email)
-                .passwordHash(null)
-                .role(role)             
+                .passwordHash(null) // Never set a password because authentication is handled by OAuth
+                .role(role)
                 .status(UserStatus.ACTIVE)
                 .authProvider(provider)
                 .emailVerified(true)
