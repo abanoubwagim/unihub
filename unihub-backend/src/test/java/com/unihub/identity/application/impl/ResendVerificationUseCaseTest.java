@@ -19,18 +19,24 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ResendVerificationUseCase Tests")
 class ResendVerificationUseCaseTest {
+
+    private final UUID userId = UUID.randomUUID();
 
     @Mock
     private UserRepository userRepository;
@@ -41,10 +47,12 @@ class ResendVerificationUseCaseTest {
     @Mock
     private EmailVerificationTokenRepository tokenRepository;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private ResendVerificationUseCaseImpl resendVerificationUseCase;
 
-    private final UUID userId = UUID.randomUUID();
     private User unverifiedUser;
 
     @BeforeEach
@@ -65,6 +73,7 @@ class ResendVerificationUseCaseTest {
     void shouldPublishEventWhenNoExistingToken() {
         when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(unverifiedUser));
         when(tokenRepository.findByUserId(userId)).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("hashedOtp");
 
         assertThatNoException().isThrownBy(
                 () -> resendVerificationUseCase.resendVerification(
@@ -79,8 +88,8 @@ class ResendVerificationUseCaseTest {
     }
 
     @Test
-    @DisplayName("should throw BadRequestException when email is already verified")
-    void shouldThrowWhenEmailAlreadyVerified() {
+    @DisplayName("should do nothing silently when email is already verified")
+    void shouldReturnSilentlyWhenEmailAlreadyVerified() {
         User verifiedUser = User.builder()
                 .id(userId).email("student@example.com")
                 .role(Role.STUDENT).status(UserStatus.ACTIVE)
@@ -89,37 +98,36 @@ class ResendVerificationUseCaseTest {
 
         when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(verifiedUser));
 
-        assertThatThrownBy(() -> resendVerificationUseCase.resendVerification(
-                new ResendVerificationRequest("student@example.com")))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("already verified");
+        assertThatNoException().isThrownBy(
+                () -> resendVerificationUseCase.resendVerification(
+                        new ResendVerificationRequest("student@example.com")));
 
         verify(eventPublisher, never()).publishEvent(any());
+        verify(tokenRepository, never()).findByUserId(any());
     }
 
     @Test
-    @DisplayName("should throw BadRequestException when email is not registered")
-    void shouldThrowWhenEmailNotFound() {
+    @DisplayName("should do nothing silently when email is not registered")
+    void shouldReturnSilentlyWhenEmailNotFound() {
         when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> resendVerificationUseCase.resendVerification(
-                new ResendVerificationRequest("student@example.com")))
-                .isInstanceOf(BadRequestException.class);
+        assertThatNoException().isThrownBy(
+                () -> resendVerificationUseCase.resendVerification(
+                        new ResendVerificationRequest("student@example.com")));
 
         verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
-    @DisplayName("should throw BadRequestException when token was requested within the last minute")
+    @DisplayName("should throw BadRequestException when token was requested within the rate-limit window")
     void shouldThrowWhenRateLimitHit() {
         EmailVerificationToken recentToken = EmailVerificationToken.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .otpHash("hash")
                 .expiresAt(LocalDateTime.now().plusMinutes(5))
                 .used(false)
                 .attempts(0)
-                .createdAt(LocalDateTime.now().minusSeconds(20)) // 20s ago — too soon
+                .createdAt(LocalDateTime.now().minusMinutes(1))
                 .build();
 
         when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(unverifiedUser));
@@ -134,20 +142,20 @@ class ResendVerificationUseCaseTest {
     }
 
     @Test
-    @DisplayName("should allow resend when previous token is older than 1 minute")
+    @DisplayName("should allow resend when previous token is older than the rate-limit window")
     void shouldAllowResendAfterCooldown() {
         EmailVerificationToken oldToken = EmailVerificationToken.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .otpHash("oldHash")
                 .expiresAt(LocalDateTime.now().minusMinutes(5))
                 .used(true)
                 .attempts(2)
-                .createdAt(LocalDateTime.now().minusMinutes(3)) // 3 minutes ago — cooldown passed
+                .createdAt(LocalDateTime.now().minusMinutes(6))
                 .build();
 
         when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(unverifiedUser));
         when(tokenRepository.findByUserId(userId)).thenReturn(Optional.of(oldToken));
+        when(passwordEncoder.encode(anyString())).thenReturn("newHash");
 
         assertThatNoException().isThrownBy(
                 () -> resendVerificationUseCase.resendVerification(
@@ -161,6 +169,7 @@ class ResendVerificationUseCaseTest {
     void shouldPublishEventWithSixDigitOtp() {
         when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(unverifiedUser));
         when(tokenRepository.findByUserId(userId)).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("hashedOtp");
 
         resendVerificationUseCase.resendVerification(new ResendVerificationRequest("student@example.com"));
 
@@ -168,5 +177,63 @@ class ResendVerificationUseCaseTest {
                 .forClass(EmailVerificationRequestedEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().otp()).matches("\\d{6}");
+    }
+
+    @Test
+    @DisplayName("should refresh the existing token (reset otp, attempts, used flag) on resend")
+    void shouldRefreshExistingToken() {
+        EmailVerificationToken oldToken = EmailVerificationToken.builder()
+                .userId(userId)
+                .otpHash("oldHash")
+                .expiresAt(LocalDateTime.now().minusMinutes(5))
+                .used(true)
+                .attempts(3)
+                .createdAt(LocalDateTime.now().minusMinutes(10))
+                .build();
+
+        when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(unverifiedUser));
+        when(tokenRepository.findByUserId(userId)).thenReturn(Optional.of(oldToken));
+        when(passwordEncoder.encode(anyString())).thenReturn("freshHash");
+
+        resendVerificationUseCase.resendVerification(new ResendVerificationRequest("student@example.com"));
+
+        assertThat(oldToken.getAttempts()).isZero();
+        assertThat(oldToken.isUsed()).isFalse();
+        assertThat(oldToken.getOtpHash()).isEqualTo("freshHash");
+        assertThat(oldToken.getExpiresAt()).isAfter(LocalDateTime.now());
+    }
+
+    @Test
+    @DisplayName("should throw BadRequestException on concurrent resend — OptimisticLockingFailureException")
+    void shouldThrowBadRequestOnOptimisticLockingConflict() {
+        when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(unverifiedUser));
+        when(tokenRepository.findByUserId(userId)).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("hashedOtp");
+        when(tokenRepository.save(any()))
+                .thenThrow(new OptimisticLockingFailureException("version conflict"));
+
+        assertThatThrownBy(() -> resendVerificationUseCase.resendVerification(
+                new ResendVerificationRequest("student@example.com")))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("wait");
+
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("should throw BadRequestException on concurrent insert — DataIntegrityViolationException")
+    void shouldThrowBadRequestOnDataIntegrityViolation() {
+        when(userRepository.findByEmail("student@example.com")).thenReturn(Optional.of(unverifiedUser));
+        when(tokenRepository.findByUserId(userId)).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(anyString())).thenReturn("hashedOtp");
+        when(tokenRepository.save(any()))
+                .thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+        assertThatThrownBy(() -> resendVerificationUseCase.resendVerification(
+                new ResendVerificationRequest("student@example.com")))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("wait");
+
+        verify(eventPublisher, never()).publishEvent(any());
     }
 }

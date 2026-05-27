@@ -24,13 +24,16 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ForgotPasswordUseCase Tests")
 class ForgotPasswordUseCaseTest {
+
+    private final UUID userId = UUID.randomUUID();
 
     @Mock
     private UserRepository userRepository;
@@ -48,7 +51,6 @@ class ForgotPasswordUseCaseTest {
     private ForgotPasswordUseCaseImpl forgotPasswordUseCase;
 
     private User activeUser;
-    private final UUID userId = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
@@ -82,8 +84,8 @@ class ForgotPasswordUseCaseTest {
         assertThat(captor.getValue().isUsed()).isFalse();
         assertThat(captor.getValue().getAttempts()).isZero();
 
-        ArgumentCaptor<PasswordResetRequestedEvent> eventCaptor = ArgumentCaptor
-                .forClass(PasswordResetRequestedEvent.class);
+        ArgumentCaptor<PasswordResetRequestedEvent> eventCaptor =
+                ArgumentCaptor.forClass(PasswordResetRequestedEvent.class);
         verify(eventPublisher).publishEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue().email()).isEqualTo("test@example.com");
         assertThat(eventCaptor.getValue().otp()).isNotBlank();
@@ -102,10 +104,53 @@ class ForgotPasswordUseCaseTest {
     }
 
     @Test
-    @DisplayName("should throw BadRequestException when requesting too soon (rate limit)")
-    void shouldThrowWhenRateLimitHit() {
+    @DisplayName("should silently do nothing for OAuth accounts — password reset not applicable")
+    void shouldDoNothingForOAuthAccount() {
+        User oauthUser = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .role(Role.STUDENT)
+                .status(UserStatus.ACTIVE)
+                .authProvider(AuthProvider.GOOGLE)
+                .emailVerified(true)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(oauthUser));
+
+        assertThatNoException().isThrownBy(
+                () -> forgotPasswordUseCase.forgotPassword(new ForgotPasswordRequest("test@example.com")));
+
+        verify(tokenRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("should silently do nothing when account email is not verified")
+    void shouldDoNothingForUnverifiedAccount() {
+        User unverifiedUser = User.builder()
+                .id(userId)
+                .email("test@example.com")
+                .role(Role.STUDENT)
+                .status(UserStatus.PENDING)
+                .authProvider(AuthProvider.LOCAL)
+                .emailVerified(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(unverifiedUser));
+
+        assertThatNoException().isThrownBy(
+                () -> forgotPasswordUseCase.forgotPassword(new ForgotPasswordRequest("test@example.com")));
+
+        verify(tokenRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("should silently swallow the rate-limit error when a code was requested too recently")
+    void shouldSwallowRateLimitErrorAndNotSendEmail() {
         PasswordResetToken recentToken = PasswordResetToken.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .otpHash("oldHash")
                 .expiresAt(LocalDateTime.now().plusMinutes(5))
@@ -125,10 +170,9 @@ class ForgotPasswordUseCaseTest {
     }
 
     @Test
-    @DisplayName("should update existing token and send email when rate limit has passed")
+    @DisplayName("should update existing token and send email when rate-limit window has passed")
     void shouldUpdateExistingTokenWhenRateLimitPassed() {
         PasswordResetToken oldToken = PasswordResetToken.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .otpHash("oldHash")
                 .expiresAt(LocalDateTime.now().minusMinutes(5))
@@ -150,10 +194,9 @@ class ForgotPasswordUseCaseTest {
     }
 
     @Test
-    @DisplayName("should update token fields when reusing existing token")
+    @DisplayName("should reset token fields (otp, used, attempts, expiry) when reusing existing token")
     void shouldResetTokenFieldsOnUpdate() {
         PasswordResetToken oldToken = PasswordResetToken.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .otpHash("oldHash")
                 .expiresAt(LocalDateTime.now().minusMinutes(10))

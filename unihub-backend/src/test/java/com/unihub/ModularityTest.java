@@ -3,10 +3,10 @@ package com.unihub;
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModules;
 
-public class ModularityTest {
+class ModularityTest {
 
     @Test
-    void verifyModules(){
+    void verifyModules() {
         ApplicationModules.of(UniHubApplication.class).verify();
     }
 

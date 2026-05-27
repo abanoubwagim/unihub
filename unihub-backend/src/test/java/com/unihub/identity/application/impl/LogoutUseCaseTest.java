@@ -2,7 +2,6 @@ package com.unihub.identity.application.impl;
 
 import com.unihub.shared.security.JwtService;
 import com.unihub.shared.security.TokenBlacklistService;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,7 +39,7 @@ class LogoutUseCaseTest {
     @Test
     @DisplayName("should NOT blacklist token when it is already expired (ttl = 0)")
     void shouldNotBlacklistExpiredToken() {
-        
+
         String token = "expired.jwt.token";
         when(jwtService.getExpirationSeconds(token)).thenReturn(0L);
 
@@ -56,6 +56,17 @@ class LogoutUseCaseTest {
 
         logoutUseCase.logout(token);
 
+        verify(tokenBlacklistService, never()).blacklist(any(), anyLong());
+    }
+
+    @Test
+    @DisplayName("should swallow exception silently when JwtService throws — logout must never fail the caller")
+    void shouldSwallowExceptionWhenJwtServiceThrows() {
+        String token = "malformed.or.expired.token";
+        when(jwtService.getExpirationSeconds(token))
+                .thenThrow(new RuntimeException("JWT parse error"));
+
+        assertThatNoException().isThrownBy(() -> logoutUseCase.logout(token));
         verify(tokenBlacklistService, never()).blacklist(any(), anyLong());
     }
 }
