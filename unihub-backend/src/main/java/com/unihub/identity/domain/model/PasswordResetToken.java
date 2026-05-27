@@ -1,29 +1,25 @@
 package com.unihub.identity.domain.model;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 import com.unihub.identity.domain.config.IdentityConstants;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Entity
 @Table(name = "password_reset_tokens")
 @Getter
-@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PasswordResetToken {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false, unique = true)
@@ -38,10 +34,10 @@ public class PasswordResetToken {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "used", nullable = false)
     private boolean used;
 
-    @Column(nullable = false)
+    @Column(name = "attempts", nullable = false)
     private int attempts;
 
     @Column(name = "reset_token", unique = true)
@@ -50,8 +46,6 @@ public class PasswordResetToken {
     @Column(name = "reset_token_expires_at")
     private LocalDateTime resetTokenExpiresAt;
 
-    @Version
-    private Long version;
 
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiresAt);
@@ -80,8 +74,8 @@ public class PasswordResetToken {
         this.resetTokenExpiresAt = null;
         this.used = false;
         this.attempts = 0;
-        this.expiresAt = LocalDateTime.now().plusMinutes(IdentityConstants.OTP_EXPIRY_MINUTES);
         this.createdAt = LocalDateTime.now();
+        this.expiresAt = LocalDateTime.now().plusMinutes(IdentityConstants.OTP_EXPIRY_MINUTES);
     }
 
 }
