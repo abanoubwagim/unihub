@@ -1,6 +1,6 @@
 package com.unihub.identity.application.usecase;
 
-import com.unihub.identity.api.dto.ResendVerificationRequest;
+import com.unihub.identity.api.dto.req.ResendVerificationRequest;
 
 public interface ResendVerificationUseCase {
 

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.unihub.identity.domain.event.UserRegisteredEvent;
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.UserRepository;
-import com.unihub.shared.config.RabbitMqConfig;
+import com.unihub.shared.config.RabbitMqConstants;
 import com.unihub.shared.outbox.OutboxMessage;
 import com.unihub.shared.outbox.OutboxMessageRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +42,7 @@ class OAuthUserCreator {
             String payload = objectMapper.writeValueAsString(event);
 
             OutboxMessage outboxMessage = OutboxMessage.builder()
-                    .exchange(RabbitMqConfig.USER_REGISTERED_EXCHANGE)
+                    .exchange(RabbitMqConstants.USER_REGISTERED_EXCHANGE)
                     .routingKey("")
                     .payload(payload)
                     .payloadType(UserRegisteredEvent.class.getName())

@@ -1,4 +1,4 @@
-package com.unihub.identity.security;
+package com.unihub.identity.config;
 
 import com.unihub.identity.infrastructure.oauth.OAuth2FailureHandler;
 import com.unihub.identity.infrastructure.oauth.OAuth2SuccessHandler;
@@ -30,6 +30,8 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final String OAUTH2_BASE_URI = "/oauth2/authorize";
+
     private final JwtAuthenticationFilter jwtFilter;
     private final UniHubOAuth2UserService oAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
@@ -37,15 +39,15 @@ public class SecurityConfig {
     private final LoginRateLimitFilter loginRateLimitFilter;
     private final ClientRegistrationRepository clientRegistrationRepository;
 
-    @Value("${app.frontend-url:http://localhost:4200}")
+    @Value("${app.frontend-url}")
     private String frontendUrl;
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter,
-            UniHubOAuth2UserService oAuth2UserService,
-            OAuth2SuccessHandler oAuth2SuccessHandler,
-            OAuth2FailureHandler oAuth2FailureHandler,
-            LoginRateLimitFilter loginRateLimitFilter,
-            ClientRegistrationRepository clientRegistrationRepository) {
+                          UniHubOAuth2UserService oAuth2UserService,
+                          OAuth2SuccessHandler oAuth2SuccessHandler,
+                          OAuth2FailureHandler oAuth2FailureHandler,
+                          LoginRateLimitFilter loginRateLimitFilter,
+                          ClientRegistrationRepository clientRegistrationRepository) {
         this.jwtFilter = jwtFilter;
         this.oAuth2UserService = oAuth2UserService;
         this.oAuth2SuccessHandler = oAuth2SuccessHandler;
@@ -54,37 +56,55 @@ public class SecurityConfig {
         this.clientRegistrationRepository = clientRegistrationRepository;
     }
 
-    private static final String OAUTH2_BASE_URI = "/oauth2/authorize";
-
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/me").authenticated()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+
+                        // Infrastructure / Public assets
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/favicon.ico").permitAll()
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/v3/api-docs/**")
-                        .permitAll()
+                                "/v3/api-docs/**").permitAll()
 
-                        // Student
-                        .requestMatchers("/api/students/me/**").hasRole("STUDENT")
-                        .requestMatchers(HttpMethod.GET, "/api/students/**").authenticated()
-                        .requestMatchers("/api/students/**").hasRole("STUDENT")
+                        // WebSocket
+                        .requestMatchers("/ws/**").permitAll()
 
-                        // University
-                        .requestMatchers("/api/university/profile/me/**").hasRole("UNIVERSITY")
-                        .requestMatchers("/api/university/metadata/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/university/profile/**").authenticated()
-                        .requestMatchers("/api/university/**").hasRole("UNIVERSITY")
+                        // Public reference data
+                        .requestMatchers("/api/v1/metadata/**").permitAll()
 
-                        .anyRequest().authenticated())
+                        // Auth module
+                        .requestMatchers("/api/v1/auth/me").authenticated()
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+
+                        // Account module
+                        .requestMatchers("/api/v1/account/**").authenticated()
+
+                        // Student module
+                        .requestMatchers("/api/v1/students/me/**").hasRole("STUDENT")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/students/**").authenticated()
+                        .requestMatchers("/api/v1/students/**").hasRole("STUDENT")
+
+                        // University module
+                        .requestMatchers(HttpMethod.GET, "/api/v1/universities").permitAll()
+                        .requestMatchers("/api/v1/universities/me/**").hasRole("UNIVERSITY")
+
+                        // Company module
+                        .requestMatchers("/api/v1/companies/**").hasRole("COMPANY")
+
+                        // Notifications module
+                        .requestMatchers("/api/v1/notifications/**").authenticated()
+
+                        // Chat module
+                        .requestMatchers("/api/v1/chat/**").authenticated()
+                        .anyRequest().authenticated()
+                )
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(endpoint -> endpoint
                                 .baseUri(OAUTH2_BASE_URI)

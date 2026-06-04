@@ -1,6 +1,7 @@
 package com.unihub.identity.api.controllers;
 
-import com.unihub.identity.api.dto.*;
+import com.unihub.identity.api.dto.req.*;
+import com.unihub.identity.api.dto.res.*;
 import com.unihub.identity.application.usecase.*;
 import com.unihub.shared.exception.InvalidTokenException;
 import com.unihub.shared.exception.SecurityViolationException;

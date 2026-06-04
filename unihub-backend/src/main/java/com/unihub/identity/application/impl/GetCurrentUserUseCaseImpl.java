@@ -1,6 +1,6 @@
 package com.unihub.identity.application.impl;
 
-import com.unihub.identity.api.dto.UserResponse;
+import com.unihub.identity.api.dto.res.UserResponse;
 import com.unihub.identity.application.usecase.GetCurrentUserUseCase;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.UnauthorizedException;

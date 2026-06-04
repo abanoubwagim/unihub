@@ -2,8 +2,8 @@ package com.unihub.identity.application.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.unihub.identity.api.dto.RegisterRequest;
-import com.unihub.identity.api.dto.RegisterResponse;
+import com.unihub.identity.api.dto.req.RegisterRequest;
+import com.unihub.identity.api.dto.res.RegisterResponse;
 import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
 import com.unihub.identity.application.usecase.RegisterUserUseCase;
 import com.unihub.identity.domain.config.IdentityConstants;
@@ -15,7 +15,7 @@ import com.unihub.identity.domain.model.EmailVerificationToken;
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.EmailVerificationTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
-import com.unihub.shared.config.RabbitMqConfig;
+import com.unihub.shared.config.RabbitMqConstants;
 import com.unihub.shared.exception.BadRequestException;
 import com.unihub.shared.exception.ConflictException;
 import com.unihub.shared.outbox.OutboxMessage;
@@ -77,7 +77,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
             String payload = objectMapper.writeValueAsString(event);
 
             OutboxMessage outboxMessage = OutboxMessage.builder()
-                    .exchange(RabbitMqConfig.USER_REGISTERED_EXCHANGE)
+                    .exchange(RabbitMqConstants.USER_REGISTERED_EXCHANGE)
                     .routingKey("")
                     .payload(payload)
                     .payloadType(UserRegisteredEvent.class.getName())

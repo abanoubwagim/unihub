@@ -1,7 +1,7 @@
 package com.unihub.identity.application.impl;
 
-import com.unihub.identity.api.dto.AuthenticationResult;
-import com.unihub.identity.api.dto.LoginRequest;
+import com.unihub.identity.api.dto.req.LoginRequest;
+import com.unihub.identity.api.dto.res.AuthenticationResult;
 import com.unihub.identity.application.usecase.LoginUserUseCase;
 import com.unihub.identity.application.usecase.RefreshTokenUseCase;
 import com.unihub.identity.domain.enums.AuthProvider;
@@ -9,8 +9,8 @@ import com.unihub.identity.domain.enums.UserStatus;
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.UnauthorizedException;
-import com.unihub.shared.security.JwtService;
 import com.unihub.shared.security.JwtSubject;
+import com.unihub.shared.security.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;

@@ -8,7 +8,7 @@ import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.EmailVerificationTokenRepository;
 import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
-import com.unihub.shared.config.RabbitMqConfig;
+import com.unihub.shared.config.RabbitMqConstants;
 import com.unihub.shared.events.UserDeletedEvent;
 import com.unihub.shared.exception.BadRequestException;
 import com.unihub.shared.exception.NotFoundException;
@@ -62,7 +62,7 @@ public class DeleteAccountUseCaseImpl implements DeleteAccountUseCase {
         userRepository.deleteById(userId);
 
         outboxMessageRepository.save(OutboxMessage.builder()
-                .exchange(RabbitMqConfig.USER_DELETED_EXCHANGE)
+                .exchange(RabbitMqConstants.USER_DELETED_EXCHANGE)
                 .routingKey("")
                 .payload(serialize(new UserDeletedEvent(userId)))
                 .payloadType(UserDeletedEvent.class.getName())

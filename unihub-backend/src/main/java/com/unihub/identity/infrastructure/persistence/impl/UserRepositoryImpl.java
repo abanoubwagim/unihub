@@ -1,8 +1,8 @@
-package com.unihub.identity.infrastructure.persistence;
+package com.unihub.identity.infrastructure.persistence.impl;
 
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.UserRepository;
-
+import com.unihub.identity.infrastructure.persistence.jpa.JpaUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

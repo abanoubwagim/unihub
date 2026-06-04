@@ -1,7 +1,7 @@
 package com.unihub.identity.infrastructure.oauth;
 
-import com.unihub.shared.security.JwtService;
 import com.unihub.shared.security.JwtSubject;
+import com.unihub.shared.security.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

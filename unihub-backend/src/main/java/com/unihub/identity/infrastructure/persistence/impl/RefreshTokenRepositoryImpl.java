@@ -1,7 +1,8 @@
-package com.unihub.identity.infrastructure.persistence;
+package com.unihub.identity.infrastructure.persistence.impl;
 
 import com.unihub.identity.domain.model.RefreshToken;
 import com.unihub.identity.domain.repository.RefreshTokenRepository;
+import com.unihub.identity.infrastructure.persistence.jpa.JpaRefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

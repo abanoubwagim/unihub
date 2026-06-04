@@ -1,15 +1,14 @@
-package com.unihub.identity.infrastructure.persistence;
-
-import java.util.Optional;
-import java.util.UUID;
-
-import org.springframework.stereotype.Repository;
+package com.unihub.identity.infrastructure.persistence.impl;
 
 import com.unihub.identity.domain.model.EmailVerificationToken;
 import com.unihub.identity.domain.repository.EmailVerificationTokenRepository;
-
-import org.springframework.transaction.annotation.Transactional;
+import com.unihub.identity.infrastructure.persistence.jpa.JpaEmailVerificationTokenRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
