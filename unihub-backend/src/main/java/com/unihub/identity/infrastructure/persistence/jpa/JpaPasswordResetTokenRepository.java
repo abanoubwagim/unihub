@@ -1,4 +1,4 @@
-package com.unihub.identity.infrastructure.persistence;
+package com.unihub.identity.infrastructure.persistence.jpa;
 
 import com.unihub.identity.domain.model.PasswordResetToken;
 import org.springframework.data.jpa.repository.JpaRepository;

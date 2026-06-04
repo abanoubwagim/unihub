@@ -1,6 +1,6 @@
 package com.unihub.identity.application.impl;
 
-import com.unihub.identity.api.dto.VerifyEmailRequest;
+import com.unihub.identity.api.dto.req.VerifyEmailRequest;
 import com.unihub.identity.application.event.EmailVerifiedEvent;
 import com.unihub.identity.application.usecase.VerifyEmailUseCase;
 import com.unihub.identity.domain.config.IdentityConstants;
@@ -74,7 +74,7 @@ public class VerifyEmailUseCaseImpl implements VerifyEmailUseCase {
         userRepository.save(user);
 
         eventPublisher.publishEvent(new EmailVerifiedEvent(user.getId(), user.getRole()));
-        
+
         log.info("Email verified successfully — userId={}", user.getId());
     }
 }

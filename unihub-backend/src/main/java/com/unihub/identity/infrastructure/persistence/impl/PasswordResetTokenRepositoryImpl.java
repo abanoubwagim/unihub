@@ -1,7 +1,8 @@
-package com.unihub.identity.infrastructure.persistence;
+package com.unihub.identity.infrastructure.persistence.impl;
 
 import com.unihub.identity.domain.model.PasswordResetToken;
 import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
+import com.unihub.identity.infrastructure.persistence.jpa.JpaPasswordResetTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

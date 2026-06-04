@@ -1,8 +1,8 @@
 package com.unihub.identity.application.usecase;
 
-import java.util.UUID;
+import com.unihub.identity.api.dto.res.UserResponse;
 
-import com.unihub.identity.api.dto.UserResponse;
+import java.util.UUID;
 
 public interface GetCurrentUserUseCase {
     UserResponse getCurrentUser(UUID userId);

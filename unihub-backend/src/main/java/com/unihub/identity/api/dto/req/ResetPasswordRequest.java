@@ -1,4 +1,4 @@
-package com.unihub.identity.api.dto;
+package com.unihub.identity.api.dto.req;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

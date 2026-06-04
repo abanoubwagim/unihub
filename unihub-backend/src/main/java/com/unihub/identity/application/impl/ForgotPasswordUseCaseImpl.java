@@ -1,6 +1,6 @@
 package com.unihub.identity.application.impl;
 
-import com.unihub.identity.api.dto.ForgotPasswordRequest;
+import com.unihub.identity.api.dto.req.ForgotPasswordRequest;
 import com.unihub.identity.application.event.PasswordResetRequestedEvent;
 import com.unihub.identity.application.usecase.ForgotPasswordUseCase;
 import com.unihub.identity.domain.config.IdentityConstants;

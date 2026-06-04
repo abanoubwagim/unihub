@@ -2,8 +2,8 @@ package com.unihub.identity.application.impl;
 
 import com.unihub.identity.application.usecase.LogoutUseCase;
 import com.unihub.identity.application.usecase.RefreshTokenUseCase;
-import com.unihub.shared.security.JwtService;
-import com.unihub.shared.security.TokenBlacklistService;
+import com.unihub.shared.security.service.JwtService;
+import com.unihub.shared.security.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

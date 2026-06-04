@@ -1,13 +1,13 @@
 package com.unihub.identity.application.impl;
 
-import com.unihub.identity.api.dto.ResetPasswordRequest;
+import com.unihub.identity.api.dto.req.ResetPasswordRequest;
 import com.unihub.identity.application.usecase.ResetPasswordUseCase;
 import com.unihub.identity.domain.model.PasswordResetToken;
 import com.unihub.identity.domain.model.User;
 import com.unihub.identity.domain.repository.PasswordResetTokenRepository;
 import com.unihub.identity.domain.repository.UserRepository;
 import com.unihub.shared.exception.BadRequestException;
-import com.unihub.shared.security.TokenBlacklistService;
+import com.unihub.shared.security.service.TokenBlacklistService;
 import com.unihub.shared.util.TokenHashUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

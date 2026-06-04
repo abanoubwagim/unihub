@@ -1,6 +1,6 @@
 package com.unihub.identity.application.impl;
 
-import com.unihub.identity.api.dto.OAuth2TokenResponse;
+import com.unihub.identity.api.dto.res.OAuth2TokenResponse;
 import com.unihub.identity.application.usecase.ExchangeOAuth2CodeUseCase;
 import com.unihub.shared.exception.BadRequestException;
 import lombok.RequiredArgsConstructor;

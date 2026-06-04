@@ -4,7 +4,7 @@ package com.unihub.identity.api.controllers;
 import com.unihub.identity.application.usecase.DeleteAccountUseCase;
 import com.unihub.identity.application.usecase.LogoutUseCase;
 import com.unihub.identity.application.usecase.RefreshTokenUseCase;
-import com.unihub.shared.api.dto.DeleteAccountRequest;
+import com.unihub.shared.api.dto.req.DeleteAccountRequest;
 import com.unihub.shared.util.CookieUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
