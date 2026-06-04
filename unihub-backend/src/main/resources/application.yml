@@ -1,25 +1,44 @@
-spring:
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/unihub}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD}
-  hikari:
-    maximum-pool-size: 10
-    minimum-idle: 2
-    connection-timeout: 30000
+server:
+  port: ${SERVER_PORT:8080}
 
+#  Spring Core
+spring:
+
+  # Database
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  # JPA / Hibernate
   jpa:
     hibernate:
       ddl-auto: validate
-    open-in-view: false  
     show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         format_sql: false
+        default_batch_fetch_size: 20
 
+  # Flyway
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+
+  # Redis
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      repositories:
+        enabled: false
+
+  # Mail (SMTP)
   mail:
-    host: smtp.gmail.com
-    port: 587
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
     properties:
@@ -29,100 +48,85 @@ spring:
           starttls:
             enable: true
 
-  servlet:
-    multipart:
-      enabled: true
-      max-file-size: 10MB
-      max-request-size: 12MB
-
-  # Redis
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+  # RabbitMQ
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
   # OAuth2 
   security:
     oauth2:
       client:
         registration:
-
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            # Scopes: email and profile are sufficient — do not request extra scopes
-            scope:
-              - email
-              - profile
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"  
-
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid, profile, email
           microsoft:
             client-id: ${MICROSOFT_CLIENT_ID}
             client-secret: ${MICROSOFT_CLIENT_SECRET}
-            scope:
-              - openid
-              - email
-              - profile
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-
+            scope: openid, profile, email
+            provider: microsoft
         provider:
-
           microsoft:
             authorization-uri: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
             token-uri: https://login.microsoftonline.com/common/oauth2/v2.0/token
-            user-info-uri: https://graph.microsoft.com/oidc/userinfo
             jwk-set-uri: https://login.microsoftonline.com/common/discovery/v2.0/keys
+            user-info-uri: https://graph.microsoft.com/oidc/userinfo
             user-name-attribute: sub
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: ${RABBITMQ_VHOST:/}
-    # Connection resilience
-    connection-timeout: 5000
-    template:
-      retry:
-        enabled: true
-        initial-interval: 1000
-        max-attempts: 3
-        multiplier: 2          
 
-server:
-  port: ${SERVER_PORT:8080}
 
+#  JWT
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:86400000} # 1 day in milliseconds
+  expiration: ${JWT_EXPIRATION:900000}
+  refresh-expiration-seconds: ${JWT_REFRESH_EXPIRATION_SECONDS:604800}
 
+
+#  Storage
 storage:
-  s3:
-    bucket: ${S3_BUCKET}
-    region: ${S3_REGION:eu-central-1}
-    base-url: ${S3_BASE_URL}
   local:
     base-path: ${STORAGE_PATH:uploads}
     base-url: ${STORAGE_BASE_URL:http://localhost:8080}
 
-# App-level config
+
+#  App Config
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
-  rate-limit:
-    login:
-      max-attempts: ${LOGIN_RATE_LIMIT_MAX_ATTEMPTS:10}
-      window-seconds: ${LOGIN_RATE_LIMIT_WINDOW_SECONDS:60}
 
+
+#  Actuator
 management:
   endpoints:
     web:
       exposure:
-        include: health, info
+        include: health, info, metrics
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: ALWAYS
+  info:
+    env:
+      enabled: true
 
+info:
+  app:
+    name: UniHub
+    version: 1.0.0
+    description: Modular Monolith platform connecting Students, Universities, and Companies
+  tech:
+    java: 21
+    spring: Boot 3.4.5
+
+
+#  Logging
 logging:
   level:
-    com.unihub: INFO
-    org.springframework.security: INFO
+    com.unihub: DEBUG
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
