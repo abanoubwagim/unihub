@@ -1,6 +1,6 @@
 package com.unihub.identity.application.impl;
 
-import com.unihub.identity.api.dto.ResendVerificationRequest;
+import com.unihub.identity.api.dto.req.ResendVerificationRequest;
 import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
 import com.unihub.identity.domain.enums.AuthProvider;
 import com.unihub.identity.domain.enums.Role;

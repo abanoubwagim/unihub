@@ -1,7 +1,7 @@
 package com.unihub.identity.application.impl;
 
-import com.unihub.shared.security.JwtService;
-import com.unihub.shared.security.TokenBlacklistService;
+import com.unihub.shared.security.service.JwtService;
+import com.unihub.shared.security.service.TokenBlacklistService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

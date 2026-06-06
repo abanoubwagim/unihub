@@ -2,8 +2,8 @@ package com.unihub.identity.application.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.unihub.identity.api.dto.RegisterRequest;
-import com.unihub.identity.api.dto.RegisterResponse;
+import com.unihub.identity.api.dto.req.RegisterRequest;
+import com.unihub.identity.api.dto.res.RegisterResponse;
 import com.unihub.identity.application.event.EmailVerificationRequestedEvent;
 import com.unihub.identity.domain.enums.AuthProvider;
 import com.unihub.identity.domain.enums.Role;
@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -71,7 +72,7 @@ class RegisterUserUseCaseTest {
         when(passwordEncoder.encode("Password1@")).thenReturn("hashed");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> {
             User u = inv.getArgument(0);
-            org.springframework.test.util.ReflectionTestUtils.setField(u, "id", UUID.randomUUID());
+            ReflectionTestUtils.setField(u, "id", UUID.randomUUID());
             return u;
         });
         when(objectMapper.writeValueAsString(any())).thenReturn("{\"userId\":\"x\",\"role\":\"STUDENT\"}");

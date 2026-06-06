@@ -1,6 +1,6 @@
 package com.unihub.identity.application.impl;
 
-import com.unihub.identity.api.dto.UserResponse;
+import com.unihub.identity.api.dto.res.UserResponse;
 import com.unihub.identity.domain.enums.AuthProvider;
 import com.unihub.identity.domain.enums.Role;
 import com.unihub.identity.domain.enums.UserStatus;

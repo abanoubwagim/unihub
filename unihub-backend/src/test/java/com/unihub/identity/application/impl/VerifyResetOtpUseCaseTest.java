@@ -1,7 +1,7 @@
 package com.unihub.identity.application.impl;
 
-import com.unihub.identity.api.dto.VerifyResetOtpRequest;
-import com.unihub.identity.api.dto.VerifyResetOtpResponse;
+import com.unihub.identity.api.dto.req.VerifyResetOtpRequest;
+import com.unihub.identity.api.dto.res.VerifyResetOtpResponse;
 import com.unihub.identity.domain.enums.AuthProvider;
 import com.unihub.identity.domain.enums.Role;
 import com.unihub.identity.domain.enums.UserStatus;
