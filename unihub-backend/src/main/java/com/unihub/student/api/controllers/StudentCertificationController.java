@@ -1,6 +1,6 @@
 package com.unihub.student.api.controllers;
 
-import com.unihub.shared.dto.PageResponse;
+import com.unihub.shared.api.dto.PageResponse;
 import com.unihub.student.api.dto.req.CertificationRequest;
 import com.unihub.student.api.dto.res.CertificationResponse;
 import com.unihub.student.application.usecase.StudentCertificationUseCase;

@@ -1,6 +1,6 @@
 package com.unihub.student.api.dto.res;
 
-import com.unihub.shared.enums.JobType;
+import com.unihub.shared.domain.enums.JobType;
 
 import java.time.LocalDate;
 import java.util.List;

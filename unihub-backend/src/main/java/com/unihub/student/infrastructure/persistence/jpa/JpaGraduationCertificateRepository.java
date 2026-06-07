@@ -15,8 +15,6 @@ import java.util.UUID;
 public interface JpaGraduationCertificateRepository extends JpaRepository<GraduationCertificate, UUID> {
     Optional<GraduationCertificate> findTopByStudentIdOrderByAttemptNumberDesc(UUID studentId);
 
-    int countByStudentId(UUID studentId);
-
     int countByStudentIdAndStatus(UUID studentId, GraduationCertificateStatus status);
 
     @Modifying

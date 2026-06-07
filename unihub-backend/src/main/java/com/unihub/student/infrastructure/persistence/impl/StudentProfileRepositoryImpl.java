@@ -44,11 +44,11 @@ public class StudentProfileRepositoryImpl implements StudentProfileRepository {
     }
 
     @Override
-    public List<StudentProfile> findAllByUserIdIn(Set<UUID> userIds) {
+    public List<StudentProfile> findAllByIdIn(Set<UUID> userIds) {
         if (userIds == null || userIds.isEmpty()) {
             return List.of();
         }
-        return jpa.findAllByUserIdIn(userIds);
+        return jpa.findAllByIdIn(userIds);
     }
 
     @Override

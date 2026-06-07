@@ -23,11 +23,6 @@ public class GraduationCertificateRepositoryImpl implements GraduationCertificat
     }
 
     @Override
-    public int countByStudentId(UUID studentId) {
-        return jpa.countByStudentId(studentId);
-    }
-
-    @Override
     public int countByStudentIdAndStatus(UUID studentId, GraduationCertificateStatus status) {
         return jpa.countByStudentIdAndStatus(studentId, status);
     }

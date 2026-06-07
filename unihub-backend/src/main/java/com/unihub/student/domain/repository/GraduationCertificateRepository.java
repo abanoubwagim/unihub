@@ -16,8 +16,6 @@ public interface GraduationCertificateRepository {
 
     Optional<GraduationCertificate> findTopByStudentIdOrderByAttemptNumberDesc(UUID studentId);
 
-    int countByStudentId(UUID studentId);
-
     int countByStudentIdAndStatus(UUID studentId, GraduationCertificateStatus status);
 
     // Bulk delete — used during account deletion cleanup

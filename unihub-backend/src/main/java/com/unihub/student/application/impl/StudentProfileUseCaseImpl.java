@@ -1,5 +1,6 @@
 package com.unihub.student.application.impl;
 
+import com.unihub.shared.api.external.UniversityPartnershipApi;
 import com.unihub.shared.exception.InvalidOperationException;
 import com.unihub.shared.exception.NotFoundException;
 import com.unihub.shared.storage.FileStorageService;
@@ -43,6 +44,7 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
     private final FileStorageService fileStorageService;
     private final ApplicationEventPublisher eventPublisher;
     private final StudentProfileMapper mapper;
+    private final UniversityPartnershipApi universityPartnershipApi;
 
     @Override
     public StudentProfileResponse updateProfile(UUID userId, UpdateProfileRequest request) {
@@ -169,9 +171,14 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
         log.info("Graduation cert uploaded — userId={}, certId={}, attempt={}, url={}",
                 userId, savedCert.getId(), savedCert.getAttemptNumber(), fileUrl);
 
-        eventPublisher.publishEvent(
-                new GraduationCertificateSubmittedEvent(
-                        profile.getId(), profile.getUniversityId(), fileUrl));
+        eventPublisher.publishEvent(new GraduationCertificateSubmittedEvent(
+                savedCert.getId(),
+                profile.getId(),
+                profile.getUniversityId(),
+                fileUrl,
+                savedCert.getAttemptNumber(),
+                savedCert.getSubmittedAt()
+        ));
 
         return new GraduationCertResponse(
                 savedCert.getId(), savedCert.getStatus(), savedCert.getAttemptNumber(), null);
@@ -228,6 +235,14 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
             eventPublisher.publishEvent(
                     new GraduationCertificateRejectedEvent(cert.getStudentId(), cert.getUniversityId(), rejectionReason));
         }
+
+        eventPublisher.publishEvent(new CertificateReviewedEvent(
+                cert.getId(),
+                cert.getStudentId(),
+                cert.getUniversityId(),
+                approved,
+                rejectionReason
+        ));
     }
 
     @Override
@@ -239,10 +254,25 @@ public class StudentProfileUseCaseImpl implements StudentProfileUseCase {
             log.warn("University already set for userId={}", userId);
             throw new InvalidOperationException("University and major can only be set once.");
         }
+
+        if (!universityPartnershipApi.isMajorOfferedByUniversity(universityId, majorId)) {
+            log.warn("Major not offered by university — userId={}, universityId={}, majorId={}",
+                    userId, universityId, majorId);
+            throw new InvalidOperationException("This major is not offered by the selected university.");
+        }
+
         profile.setUniversityId(universityId);
         profile.setMajorId(majorId);
         studentProfileRepository.save(profile);
-        eventPublisher.publishEvent(new StudentUniversitySetEvent(profile.getId(), universityId));
+        eventPublisher.publishEvent(new StudentUniversitySetEvent(
+                profile.getId(),
+                profile.getUserId(),
+                profile.getName(),
+                profile.getProfilePhotoUrl(),
+                universityId,
+                majorId,
+                profile.getLevel() != null ? profile.getLevel().name() : null
+        ));
         log.info("University set for userId={}, universityId={}, majorId={}", userId, universityId, majorId);
     }
 

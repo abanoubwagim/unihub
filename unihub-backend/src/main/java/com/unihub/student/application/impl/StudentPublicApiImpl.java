@@ -1,7 +1,8 @@
 package com.unihub.student.application.impl;
 
-import com.unihub.student.application.StudentPublicApi;
-import com.unihub.student.application.StudentPublicInfo;
+
+import com.unihub.shared.api.dto.external.StudentPublicInfo;
+import com.unihub.shared.api.external.StudentPublicApi;
 import com.unihub.student.domain.model.StudentProfile;
 import com.unihub.student.domain.repository.StudentProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -10,11 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,22 +20,6 @@ public class StudentPublicApiImpl implements StudentPublicApi {
 
     private final StudentProfileRepository studentProfileRepository;
 
-    @Override
-    public Optional<StudentPublicInfo> getByUserId(UUID userId) {
-        return studentProfileRepository.findByUserId(userId)
-                .map(this::toInfo);
-    }
-
-    @Override
-    public Map<UUID, StudentPublicInfo> getByUserIds(Set<UUID> userIds) {
-        if (userIds == null || userIds.isEmpty()) {
-            return Map.of();
-        }
-        return studentProfileRepository.findAllByUserIdIn(userIds).stream()
-                .collect(Collectors.toMap(
-                        StudentProfile::getUserId,
-                        this::toInfo));
-    }
 
     @Override
     public Page<StudentPublicInfo> getStudentsByUniversityId(UUID universityId, Pageable pageable) {
