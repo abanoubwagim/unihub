@@ -4,6 +4,11 @@ import java.util.UUID;
 
 public record StudentUniversitySetEvent(
         UUID studentProfileId,
-        UUID universityId
+        UUID userId,
+        String name,
+        String profilePhotoUrl,
+        UUID universityId,
+        UUID majorId,
+        String level
 ) {
 }

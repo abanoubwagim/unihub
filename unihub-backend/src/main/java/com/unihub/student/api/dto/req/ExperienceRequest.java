@@ -1,6 +1,6 @@
 package com.unihub.student.api.dto.req;
 
-import com.unihub.shared.enums.JobType;
+import com.unihub.shared.domain.enums.JobType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 

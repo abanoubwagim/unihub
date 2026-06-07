@@ -37,7 +37,8 @@ public class StudentProfile {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "academic_status", nullable = false)
-    private AcademicStatus academicStatus;
+    @Builder.Default
+    private AcademicStatus academicStatus = AcademicStatus.UNDERGRADUATE;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "level")
@@ -70,7 +71,7 @@ public class StudentProfile {
 
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentLink> links = new ArrayList<>();
-    
+
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentCertification> certifications = new ArrayList<>();
 

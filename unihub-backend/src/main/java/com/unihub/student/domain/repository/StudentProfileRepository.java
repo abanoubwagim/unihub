@@ -21,8 +21,8 @@ public interface StudentProfileRepository {
 
     void delete(StudentProfile profile);
 
-    List<StudentProfile> findAllByUserIdIn(Set<UUID> userIds);
+    List<StudentProfile> findAllByIdIn(Set<UUID> userIds);
 
     Page<StudentProfile> findPageByUniversityId(UUID universityId, Pageable pageable);
-    
+
 }

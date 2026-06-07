@@ -24,6 +24,8 @@ public interface JpaStudentProfileRepository extends JpaRepository<StudentProfil
     @EntityGraph(attributePaths = {"skills", "links"})
     List<StudentProfile> findAllByUserIdIn(Set<UUID> userIds);
 
+    List<StudentProfile> findAllByIdIn(Set<UUID> ids);
+
     @EntityGraph(attributePaths = {"skills", "links"})
     Page<StudentProfile> findAllByUniversityId(UUID universityId, Pageable pageable);
 

@@ -1,6 +1,6 @@
 package com.unihub.student.api.controllers;
 
-import com.unihub.shared.dto.PageResponse;
+import com.unihub.shared.api.dto.PageResponse;
 import com.unihub.student.api.dto.req.ExperienceRequest;
 import com.unihub.student.api.dto.res.ExperienceResponse;
 import com.unihub.student.application.usecase.StudentExperienceUseCase;

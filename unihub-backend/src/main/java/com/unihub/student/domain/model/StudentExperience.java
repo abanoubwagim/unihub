@@ -1,6 +1,6 @@
 package com.unihub.student.domain.model;
 
-import com.unihub.shared.enums.JobType;
+import com.unihub.shared.domain.enums.JobType;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,6 +1,6 @@
 package com.unihub.student.application.impl;
 
-import com.unihub.shared.dto.PageResponse;
+import com.unihub.shared.api.dto.PageResponse;
 import com.unihub.shared.exception.NotFoundException;
 import com.unihub.shared.storage.FileStorageService;
 import com.unihub.student.api.dto.req.CertificationRequest;

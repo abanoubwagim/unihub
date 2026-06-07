@@ -1,13 +1,12 @@
 package com.unihub.student.application.usecase;
 
-import java.util.UUID;
-
+import com.unihub.shared.api.dto.PageResponse;
+import com.unihub.student.api.dto.req.CertificationRequest;
+import com.unihub.student.api.dto.res.CertificationResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.unihub.shared.dto.PageResponse;
-import com.unihub.student.api.dto.req.CertificationRequest;
-import com.unihub.student.api.dto.res.CertificationResponse;
+import java.util.UUID;
 
 public interface StudentCertificationUseCase {
 
