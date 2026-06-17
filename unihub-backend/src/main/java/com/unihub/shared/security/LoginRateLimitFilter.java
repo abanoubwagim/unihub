@@ -19,23 +19,12 @@ import java.util.List;
 @Component
 public class LoginRateLimitFilter extends OncePerRequestFilter {
 
-    private final StringRedisTemplate redis;
-
-    @Value("${app.trusted-proxy-count:1}")
-    private int trustedProxyCount;
-
-
-    @Value("${app.rate-limit.login.max-attempts:10}")
-    private int maxAttempts;
-
-    @Value("${app.rate-limit.login.window-seconds:60}")
-    private int windowSeconds;
-
     private static final String KEY_PREFIX = "login:attempts:";
-    private static final String LOGIN_URI = "/api/auth/login";
+    private static final String LOGIN_URI = "/api/v1/auth/login";
     private static final String POST_METHOD = "POST";
 
     private static final DefaultRedisScript<Long> INCR_SCRIPT;
+
     static {
         INCR_SCRIPT = new DefaultRedisScript<>();
         INCR_SCRIPT.setScriptText(
@@ -45,14 +34,24 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         INCR_SCRIPT.setResultType(Long.class);
     }
 
+    private final StringRedisTemplate redis;
+
+    @Value("${app.trusted-proxy-count:1}")
+    private int trustedProxyCount;
+    @Value("${app.rate-limit.login.max-attempts:10}")
+    private int maxAttempts;
+    @Value("${app.rate-limit.login.window-seconds:60}")
+    private int windowSeconds;
+
     public LoginRateLimitFilter(StringRedisTemplate redis) {
         this.redis = redis;
     }
 
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain chain)
+                                    HttpServletResponse response,
+                                    FilterChain chain)
             throws ServletException, IOException {
 
         if (!LOGIN_URI.equals(request.getRequestURI())
@@ -64,17 +63,16 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         String clientIp = resolveClientIp(request);
         String key = KEY_PREFIX + clientIp;
 
-        Long count = redis.execute(
-                INCR_SCRIPT,
-                List.of(key),
-                String.valueOf(windowSeconds));
-
-        if (count != null && count > maxAttempts) {
-            log.warn("Login rate limit exceeded — ip={}, count={}, limit={}",
-                    clientIp, count, maxAttempts);
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.getWriter().write("Too many login attempts. Please try again later.");
-            return;
+        try {
+            Long count = redis.execute(INCR_SCRIPT, List.of(key), String.valueOf(windowSeconds));
+            if (count != null && count > maxAttempts) {
+                log.warn("Login rate limit exceeded — ip={}", clientIp);
+                response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+                response.getWriter().write("Too many login attempts. Please try again later.");
+                return;
+            }
+        } catch (Exception e) {
+            log.warn("Redis unavailable — skipping rate limit check for ip={}", clientIp);
         }
 
         chain.doFilter(request, response);
@@ -89,7 +87,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
             return request.getRemoteAddr();
         }
         String[] parts = forwarded.split(",");
-        int clientIndex = parts.length - trustedProxyCount;
+        int clientIndex = parts.length - trustedProxyCount - 1;
         if (clientIndex < 0) {
             log.warn("X-Forwarded-For has fewer entries ({}) than trustedProxyCount ({}) — "
                     + "falling back to remoteAddr", parts.length, trustedProxyCount);

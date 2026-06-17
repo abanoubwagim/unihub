@@ -1,4 +1,4 @@
-package com.unihub.shared.api.dto;
+package com.unihub.shared.api.dto.req;
 
 import jakarta.validation.constraints.NotBlank;
 

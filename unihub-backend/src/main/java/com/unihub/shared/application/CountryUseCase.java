@@ -1,8 +1,9 @@
 package com.unihub.shared.application;
 
-import com.unihub.shared.api.dto.CountryResponse;
+import com.unihub.shared.api.dto.res.CountryResponse;
 import com.unihub.shared.repository.CountryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ public class CountryUseCase {
 
     private final CountryRepository countryRepository;
 
+    @Cacheable(value = "countries")
     public List<CountryResponse> getAll() {
         return countryRepository.findAll()
                 .stream()

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -12,20 +13,20 @@ import java.util.List;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(name = "spring.rabbitmq.enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class OutboxRelayService {
 
+    private static final int MAX_ATTEMPTS = 3;
+    private static final int BATCH_SIZE = 50;
     private final OutboxMessageRepository outboxMessageRepository;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transactionTemplate;
 
-    private static final int MAX_ATTEMPTS = 3;
-    private static final int BATCH_SIZE   = 50;
-
     @Scheduled(fixedDelayString = "${outbox.relay.fixed-delay-ms:5000}")
     public void relay() {
-        
+
         for (int i = 0; i < BATCH_SIZE; i++) {
             Boolean hadWork = transactionTemplate.execute(status -> {
                 List<OutboxMessage> locked =
@@ -35,7 +36,7 @@ public class OutboxRelayService {
                     return false;
                 }
 
-                OutboxMessage message = locked.get(0);
+                OutboxMessage message = locked.getFirst();
 
                 try {
                     Class<?> payloadClass = Class.forName(message.getPayloadType());
@@ -62,7 +63,7 @@ public class OutboxRelayService {
 
                     if (message.getAttempts() >= MAX_ATTEMPTS) {
                         log.error("Outbox relay: GIVING UP after {} attempts — id={}, type={}. "
-                                + "Manual intervention required.",
+                                        + "Manual intervention required.",
                                 MAX_ATTEMPTS, message.getId(), message.getPayloadType());
                     }
                 }
