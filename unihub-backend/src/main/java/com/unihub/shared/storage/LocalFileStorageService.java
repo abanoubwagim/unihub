@@ -181,7 +181,7 @@ public class LocalFileStorageService implements FileStorageService {
 
     private byte[] readHeaderBytes(MultipartFile file) {
         try (InputStream is = file.getInputStream()) {
-            byte[] header = new byte[12];
+            byte[] header = new byte[32];
             int bytesRead = is.read(header, 0, 12);
 
             if (bytesRead < 4) {

@@ -1,6 +1,6 @@
 package com.unihub.shared.api.controllers;
 
-import com.unihub.shared.api.dto.CountryResponse;
+import com.unihub.shared.api.dto.res.CountryResponse;
 import com.unihub.shared.application.CountryUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

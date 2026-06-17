@@ -1,5 +1,6 @@
-package com.unihub.student.application;
+package com.unihub.shared.api.external;
 
+import com.unihub.shared.api.dto.external.PendingCertInfo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
