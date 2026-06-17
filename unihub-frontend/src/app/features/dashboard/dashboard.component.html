@@ -1,0 +1,191 @@
+<div class="dashboard-shell">
+
+  <!-- Top Nav -->
+  <header class="topnav">
+    <div class="topnav__brand">
+      <svg aria-hidden="true" fill="none" height="24" viewBox="0 0 32 32" width="24">
+        <polygon fill="none" points="16,2 30,10 30,22 16,30 2,22 2,10"
+                 stroke="#14B8A6" stroke-width="2"/>
+        <polygon fill="#14B8A6" opacity="0.3" points="16,8 24,13 24,21 16,26 8,21 8,13"/>
+        <circle cx="16" cy="16" fill="#14B8A6" r="3"/>
+      </svg>
+      <span class="topnav__brand-text">UniHub</span>
+    </div>
+
+    <nav aria-label="Main navigation" class="topnav__links">
+      <a class="topnav__link topnav__link--active" href="#">Dashboard</a>
+      <a class="topnav__link" href="#">Jobs</a>
+      <a class="topnav__link" href="#">Forum</a>
+      <a class="topnav__link" href="#">Messages</a>
+    </nav>
+
+    <div class="topnav__actions">
+
+      <!-- Notification Bell -->
+      <app-notification-bell/>
+
+      @if (!loadingUser() && user()) {
+      <div class="topnav__user">
+          <span aria-hidden="true" class="topnav__user-avatar">
+            {{ roleEmoji }}
+          </span>
+        <span class="topnav__user-email">{{ user()!.email }}</span>
+      </div>
+      }
+
+      <button
+        (click)="logout()"
+        [disabled]="loggingOut()"
+        aria-label="Sign out"
+        class="topnav__logout"
+      >
+        @if (loggingOut()) {
+        <span class="spinner" style="width:14px;height:14px;border-width:2px"></span>
+        } @else {
+        Sign out
+        }
+      </button>
+    </div>
+  </header>
+
+  <!--  Main Content  -->
+  <main class="dashboard-main">
+
+    @if (loadingUser()) {
+    <div aria-live="polite" class="loading-state">
+      <div class="loading-state__spinner"></div>
+      <p>Loading your dashboard…</p>
+    </div>
+    }
+
+    @if (!loadingUser() && user()) {
+    <!-- Welcome Banner -->
+    <section class="welcome-banner">
+      <div class="welcome-banner__content">
+        <div aria-hidden="true" class="welcome-banner__icon">{{ roleEmoji }}</div>
+        <div>
+          <h1 class="welcome-banner__title">
+            Welcome back!
+          </h1>
+          <p class="welcome-banner__sub">
+            Signed in as <strong>{{ user()!.email }}</strong>
+          </p>
+        </div>
+      </div>
+
+      <div class="welcome-banner__badges">
+        <span class="badge badge--role">{{ roleLabel }}</span>
+        <span class="badge {{ statusColor }}">{{ user()!.status }}</span>
+        @if (!user()!.emailVerified) {
+        <span class="badge badge--warning">⚠ Email not verified</span>
+        } @else {
+        <span class="badge badge--success">✓ Verified</span>
+        }
+      </div>
+    </section>
+
+    <!-- Role-specific quick actions -->
+    <section class="quick-actions">
+      <h2 class="section-title">Quick actions</h2>
+      <div class="action-grid">
+
+        @if (user()!.role === 'STUDENT') {
+        <div class="action-card">
+          <span class="action-card__icon">💼</span>
+          <h3>Browse jobs</h3>
+          <p>Find opportunities from partner companies</p>
+          <a class="action-card__btn" href="#">Explore →</a>
+        </div>
+        <div class="action-card">
+          <span class="action-card__icon">📄</span>
+          <h3>My CV</h3>
+          <p>Build or upload your resume with AI scoring</p>
+          <a class="action-card__btn" href="#">Open →</a>
+        </div>
+        <div class="action-card">
+          <span class="action-card__icon">🏆</span>
+          <h3>Achievements</h3>
+          <p>View your points, badges, and streak</p>
+          <a class="action-card__btn" href="#">View →</a>
+        </div>
+        <div class="action-card">
+          <span class="action-card__icon">💬</span>
+          <h3>Forum</h3>
+          <p>Ask questions and help fellow students</p>
+          <a class="action-card__btn" href="#">Join →</a>
+        </div>
+        }
+
+        @if (user()!.role === 'COMPANY') {
+        <div class="action-card">
+          <span class="action-card__icon">📋</span>
+          <h3>Post a job</h3>
+          <p>Create a new job listing for students</p>
+          <a class="action-card__btn" href="#">Create →</a>
+        </div>
+        <div class="action-card">
+          <span class="action-card__icon">👥</span>
+          <h3>Applications</h3>
+          <p>Review candidate applications</p>
+          <a class="action-card__btn" href="#">Review →</a>
+        </div>
+        <div class="action-card">
+          <span class="action-card__icon">🤝</span>
+          <h3>Partnerships</h3>
+          <p>Connect with universities for talent</p>
+          <a class="action-card__btn" href="#">Manage →</a>
+        </div>
+        <div class="action-card">
+          <span class="action-card__icon">📊</span>
+          <h3>Analytics</h3>
+          <p>Track hiring metrics and engagement</p>
+          <a class="action-card__btn" href="#">View →</a>
+        </div>
+        }
+
+        @if (user()!.role === 'UNIVERSITY') {
+        <div class="action-card">
+          <span class="action-card__icon">🎓</span>
+          <h3>Students</h3>
+          <p>View and verify enrolled students</p>
+          <a class="action-card__btn" href="#">Manage →</a>
+        </div>
+        <div class="action-card">
+          <span class="action-card__icon">✅</span>
+          <h3>Verifications</h3>
+          <p>Review pending graduation certificates</p>
+          <a class="action-card__btn" href="#">Review →</a>
+        </div>
+        <div class="action-card">
+          <span class="action-card__icon">🤝</span>
+          <h3>Partnerships</h3>
+          <p>Manage company partnership agreements</p>
+          <a class="action-card__btn" href="#">Manage →</a>
+        </div>
+        <div class="action-card">
+          <span class="action-card__icon">📈</span>
+          <h3>Placement stats</h3>
+          <p>Track employment rates of your graduates</p>
+          <a class="action-card__btn" href="#">View →</a>
+        </div>
+        }
+
+      </div>
+    </section>
+
+    <!-- Email verification notice -->
+    @if (!user()!.emailVerified) {
+    <div class="alert alert--warning">
+      <span class="alert__icon">⚠️</span>
+      <div class="alert__content">
+        <strong>Verify your email</strong>
+        <p>Some features are restricted until you verify your email address.</p>
+      </div>
+      <a [queryParams]="{ email: user()!.email }" class="alert__btn"
+         routerLink="/auth/verify-email">Verify now →</a>
+    </div>
+    }
+    }
+
+  </main>
+</div>
