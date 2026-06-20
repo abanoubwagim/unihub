@@ -1,0 +1,67 @@
+@use '../login/login.component.scss';
+
+// Role Selector
+.role-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.role-selector__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.role-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.625rem;
+}
+
+.role-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.875rem 0.625rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
+
+  &__emoji {
+    font-size: 1.375rem;
+    margin-bottom: 0.125rem;
+  }
+
+  &__label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  &__desc {
+    font-size: 0.6875rem;
+    color: var(--color-text-muted);
+    line-height: 1.35;
+  }
+
+  &--active {
+    border-color: var(--color-primary);
+    background: var(--color-primary-subtle);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+
+    .role-card__label { color: var(--color-primary); }
+  }
+
+  &:hover:not(&--active) {
+    border-color: #CBD5E1;
+    background: var(--color-surface-alt);
+  }
+}

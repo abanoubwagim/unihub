@@ -1,0 +1,192 @@
+<div class="auth-form">
+
+  <header class="auth-form__header">
+    <h2>Welcome back</h2>
+    <p class="auth-form__subtitle">Sign in to continue to UniHub</p>
+  </header>
+
+  <form (ngSubmit)="onSubmit()" [formGroup]="form" class="form" novalidate>
+
+    <!-- Email -->
+    <div [class.field--error]="fieldError('email')" class="field">
+      <label class="field__label" for="email">Email address</label>
+      <input
+        [attr.aria-describedby]="fieldError('email') ? 'email-error' : null"
+        autocomplete="email"
+        class="field__input"
+        formControlName="email"
+        id="email"
+        placeholder="you@example.com"
+        type="email"
+      />
+      @if (fieldError('email')) {
+      <span class="field__error" id="email-error" role="alert">{{ fieldError('email') }}</span>
+      }
+    </div>
+
+    <!-- Password -->
+    <div [class.field--error]="fieldError('password')" class="field">
+      <div class="field__label-row">
+        <label class="field__label" for="password">Password</label>
+        <a class="field__link" routerLink="/auth/forgot-password">Forgot password?</a>
+      </div>
+      <div class="field__input-wrap">
+        <input
+          [type]="showPassword() ? 'text' : 'password'"
+          autocomplete="current-password"
+          class="field__input field__input--with-btn"
+          formControlName="password"
+          id="password"
+          placeholder="Enter your password"
+        />
+        <button
+          (click)="togglePassword()"
+          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+          class="field__eye-btn"
+          type="button"
+        >
+          @if (showPassword()) {
+          <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round"
+               stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"
+               width="18" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          } @else {
+          <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round"
+               stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"
+               width="18" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+            <line x1="1" x2="23" y1="1" y2="23"/>
+          </svg>
+          }
+        </button>
+      </div>
+      @if (fieldError('password')) {
+      <span class="field__error" role="alert">{{ fieldError('password') }}</span>
+      }
+    </div>
+
+    <!-- Submit -->
+    <button [disabled]="loading()" class="btn btn--primary" type="submit">
+      @if (loading()) {
+      <span aria-hidden="true" class="spinner"></span>
+      <span>Signing in…</span>
+      } @else {
+      Sign in
+      }
+    </button>
+
+  </form>
+
+  <!--  Email-verification banner  -->
+  @if (emailUnverified()) {
+  <div aria-live="polite" class="verify-banner" role="alert">
+    <span class="verify-banner__icon">✉️</span>
+
+    <div class="verify-banner__body">
+
+      @if (resendSent()) {
+      <!-- ── Success state ── -->
+      <p class="verify-banner__title verify-banner__title--success">
+        Verification email sent!
+      </p>
+      <p class="verify-banner__text">
+        We sent a new code to <strong>{{ email.value }}</strong>.
+        Check your inbox (and spam folder).
+      </p>
+      <a
+        [queryParams]="{ email: email.value }"
+        class="btn btn--primary btn--sm"
+        routerLink="/auth/verify-email"
+      >
+        Enter verification code →
+      </a>
+
+      } @else {
+      <!-- ── Default state ── -->
+      <p class="verify-banner__title">Email not verified</p>
+      <p class="verify-banner__text">
+        <strong>{{ email.value }}</strong> hasn't been verified yet.
+        Please check your inbox or request a new code.
+      </p>
+      <div class="verify-banner__actions">
+        <button
+          (click)="resendVerification()"
+          [disabled]="resendLoading()"
+          class="btn btn--outline btn--sm"
+          type="button"
+        >
+          @if (resendLoading()) {
+          <span aria-hidden="true" class="spinner spinner--sm"></span>
+          <span>Sending…</span>
+          } @else {
+          Resend verification email
+          }
+        </button>
+
+        <a
+          [queryParams]="{ email: email.value }"
+          class="verify-banner__link"
+          routerLink="/auth/verify-email"
+        >
+          I already have a code
+        </a>
+      </div>
+      }
+
+    </div>
+  </div>
+  }
+
+  <!-- Divider -->
+  <div class="divider">
+    <span class="divider__line"></span>
+    <span class="divider__text">or continue with</span>
+    <span class="divider__line"></span>
+  </div>
+
+  <!-- OAuth2 Role Selector -->
+  <div class="oauth-section">
+    <p class="oauth-section__hint">Signing in as a:</p>
+    <div class="role-tabs">
+      @for (r of [['STUDENT','🎓','Student'], ['COMPANY','🏢','Company'], ['UNIVERSITY','🏛️','University']] ; track r[0])
+      {
+      <button
+        (click)="oauthRole.set($any(r[0]))"
+        [class.role-tab--active]="oauthRole() === r[0]"
+        class="role-tab"
+        type="button"
+      >
+        {{ r[1] }} {{ r[2] }}
+      </button>
+      }
+    </div>
+
+    <button (click)="loginWithGoogle()" class="btn btn--google" type="button">
+      <svg class="google-icon" height="18" viewBox="0 0 24 24" width="18">
+        <path
+          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+          fill="#4285F4"/>
+        <path
+          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+          fill="#34A853"/>
+        <path
+          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+          fill="#FBBC05"/>
+        <path
+          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+          fill="#EA4335"/>
+      </svg>
+      Continue with Google
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <p class="auth-form__footer">
+    Don't have an account?
+    <a routerLink="/auth/register">Create one</a>
+  </p>
+
+</div>

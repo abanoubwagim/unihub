@@ -1,0 +1,203 @@
+// Shell
+.auth-shell {
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+// Brand Panel (Left)
+.brand-panel {
+  position: relative;
+  background: var(--color-brand-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &__inner {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    padding: 3.5rem;
+    gap: 2.5rem;
+  }
+}
+
+// Logo
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  &__mark {
+    flex-shrink: 0;
+  }
+
+  &__text {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+}
+
+// Headline
+.brand-headline {
+  h1 {
+    font-family: var(--font-display);
+    font-size: 2.375rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+  }
+}
+
+.brand-subtext {
+  color: var(--color-brand-muted);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  max-width: 340px;
+}
+
+// Role Pills
+.brand-roles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  color: var(--color-brand-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  width: fit-content;
+  backdrop-filter: blur(8px);
+  transition: background var(--transition-base);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.09);
+  }
+
+  &__icon {
+    font-size: 1rem;
+  }
+}
+
+// Stats bar
+.brand-stats {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(12px);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+
+  &__value {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--color-primary-light);
+    letter-spacing: -0.02em;
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    color: var(--color-brand-muted);
+    font-weight: 400;
+  }
+}
+
+.stat-divider {
+  width: 1px;
+  height: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+// Decorative Elements
+.brand-deco {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.deco-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(20, 184, 166, 0.15);
+
+  &--1 {
+    width: 500px;
+    height: 500px;
+    top: -200px;
+    right: -200px;
+    animation: rotateRing 30s linear infinite;
+  }
+
+  &--2 {
+    width: 350px;
+    height: 350px;
+    bottom: -100px;
+    left: -120px;
+    animation: rotateRing 20s linear infinite reverse;
+  }
+
+  &--3 {
+    width: 200px;
+    height: 200px;
+    top: 45%;
+    right: -60px;
+    border-color: rgba(20, 184, 166, 0.08);
+    animation: rotateRing 15s linear infinite;
+  }
+}
+
+.deco-dot-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse at center, transparent 20%, black 80%);
+}
+
+@keyframes rotateRing {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+// Form Panel (Right)
+.form-panel {
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  overflow-y: auto;
+
+  &__inner {
+    width: 100%;
+    max-width: 440px;
+  }
+}

@@ -1,0 +1,45 @@
+@use '../login/login.component.scss';
+
+.verify-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.otp-input {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.5em;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  color: var(--color-primary);
+}
+
+.resend-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+
+  &__text {
+    color: var(--color-text-secondary);
+  }
+
+  &__btn {
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-decoration: underline;
+    transition: opacity var(--transition-fast);
+
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    &:hover:not(:disabled) { opacity: 0.8; }
+  }
+
+  &__countdown {
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+}
