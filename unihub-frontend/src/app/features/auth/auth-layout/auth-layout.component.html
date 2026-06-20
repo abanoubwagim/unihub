@@ -1,0 +1,77 @@
+<div class="auth-shell">
+
+  <!--   Left: Brand Panel  -->
+  <aside class="brand-panel">
+    <div class="brand-panel__inner">
+
+      <div class="brand-logo">
+        <div class="brand-logo__mark">
+          <svg fill="none" height="32" viewBox="0 0 32 32" width="32">
+            <polygon fill="none" points="16,2 30,10 30,22 16,30 2,22 2,10"
+                     stroke="#14B8A6" stroke-width="2"/>
+            <polygon fill="#14B8A6" opacity="0.3" points="16,8 24,13 24,21 16,26 8,21 8,13"/>
+            <circle cx="16" cy="16" fill="#14B8A6" r="3"/>
+          </svg>
+        </div>
+        <span class="brand-logo__text">UniHub</span>
+      </div>
+
+      <div class="brand-headline">
+        <h1>Where ambition<br>meets&nbsp;opportunity.</h1>
+        <p class="brand-subtext">
+          A unified platform connecting students, universities,
+          and companies through one seamless experience.
+        </p>
+      </div>
+
+      <div class="brand-roles">
+        <div class="role-pill">
+          <span class="role-pill__icon">🎓</span>
+          <span>Students</span>
+        </div>
+        <div class="role-pill">
+          <span class="role-pill__icon">🏛️</span>
+          <span>Universities</span>
+        </div>
+        <div class="role-pill">
+          <span class="role-pill__icon">🏢</span>
+          <span>Companies</span>
+        </div>
+      </div>
+
+      <div class="brand-stats">
+        <div class="stat-item">
+          <span class="stat-item__value">1k+</span>
+          <span class="stat-item__label">Students</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-item__value">120+</span>
+          <span class="stat-item__label">Universities</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-item__value">1.4k+</span>
+          <span class="stat-item__label">Companies</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Decorative background elements -->
+    <div aria-hidden="true" class="brand-deco">
+      <div class="deco-ring deco-ring--1"></div>
+      <div class="deco-ring deco-ring--2"></div>
+      <div class="deco-ring deco-ring--3"></div>
+      <div class="deco-dot-grid"></div>
+    </div>
+  </aside>
+
+  <!-- Right: Form Panel  -->
+  <main class="form-panel">
+    <div class="form-panel__inner">
+      <router-outlet/>
+    </div>
+  </main>
+
+</div>

@@ -1,0 +1,24 @@
+<div class="callback-page">
+
+  @if (status === 'loading') {
+    <div class="callback-card callback-card--loading">
+      <div class="callback-spinner" aria-label="Loading">
+        <div class="callback-spinner__ring"></div>
+      </div>
+      <h2>Signing you in…</h2>
+      <p>Please wait while we complete your authentication.</p>
+    </div>
+  }
+
+  @if (status === 'error') {
+    <div class="callback-card callback-card--error">
+      <div class="callback-icon">⚠️</div>
+      <h2>Authentication failed</h2>
+      <p>{{ errorMessage }}</p>
+      <button class="btn btn--primary" (click)="retryLogin()">
+        Back to sign in
+      </button>
+    </div>
+  }
+
+</div>

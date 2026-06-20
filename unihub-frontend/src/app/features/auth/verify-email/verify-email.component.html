@@ -1,0 +1,64 @@
+<div class="auth-form">
+
+  <header class="auth-form__header">
+    <div class="verify-icon" aria-hidden="true">✉️</div>
+    <h2>Check your email</h2>
+    <p class="auth-form__subtitle">
+      We sent a 6-digit code to
+      <strong>{{ email }}</strong>
+    </p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="form">
+
+    <div class="field" [class.field--error]="otpError">
+      <label class="field__label" for="otp">Verification code</label>
+      <input
+        id="otp"
+        type="text"
+        inputmode="numeric"
+        maxlength="6"
+        class="field__input otp-input"
+        formControlName="otp"
+        placeholder="000000"
+        autocomplete="one-time-code"
+        (input)="onOtpInput($event)"
+      />
+      @if (otpError) {
+        <span class="field__error" role="alert">{{ otpError }}</span>
+      }
+    </div>
+
+    <button type="submit" class="btn btn--primary" [disabled]="loading()">
+      @if (loading()) {
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Verifying…</span>
+      } @else {
+        Verify email
+      }
+    </button>
+
+  </form>
+
+  <div class="resend-section">
+    <span class="resend-section__text">Didn't receive the code?</span>
+    @if (resendCooldown() > 0) {
+      <span class="resend-section__countdown">Resend in {{ resendCooldown() }}s</span>
+    } @else {
+      <button
+        type="button"
+        class="resend-section__btn"
+        (click)="resend()"
+        [disabled]="resending()"
+      >
+        @if (resending()) { Sending… } @else { Resend code }
+      </button>
+    }
+  </div>
+
+  <p class="auth-form__footer">
+    Wrong email?
+    <a routerLink="/auth/register">Go back</a>
+  </p>
+
+</div>

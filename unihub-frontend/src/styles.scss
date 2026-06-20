@@ -1,1 +1,147 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  // Brand Colors
+  --color-primary:         #0D9488;
+  --color-primary-hover:   #0F766E;
+  --color-primary-light:   #14B8A6;
+  --color-primary-pale:    #CCFBF1;
+  --color-primary-subtle:  #F0FDFA;
+
+  // Surface Colors (Brand Panel)
+  --color-brand-bg:        #0B1526;
+  --color-brand-surface:   #111E35;
+  --color-brand-border:    rgba(13, 148, 136, 0.25);
+  --color-brand-text:      #E2E8F0;
+  --color-brand-muted:     #94A3B8;
+
+  // Neutral / Light Surface
+  --color-bg:              #F8FAFC;
+  --color-surface:         #FFFFFF;
+  --color-surface-alt:     #F1F5F9;
+  --color-border:          #E2E8F0;
+  --color-border-focus:    #0D9488;
+
+  // Text
+  --color-text:            #0F172A;
+  --color-text-secondary:  #475569;
+  --color-text-muted:      #94A3B8;
+  --color-text-placeholder:#CBD5E1;
+
+  // Semantic
+  --color-success:         #10B981;
+  --color-success-bg:      #ECFDF5;
+  --color-error:           #EF4444;
+  --color-error-bg:        #FEF2F2;
+  --color-warning:         #F59E0B;
+  --color-warning-bg:      #FFFBEB;
+  --color-info:            #3B82F6;
+  --color-info-bg:         #EFF6FF;
+
+  // Typography
+  --font-display:          'Lora', Georgia, serif;
+  --font-body:             'DM Sans', system-ui, sans-serif;
+
+  // Sizing
+  --radius-sm:    6px;
+  --radius-md:    10px;
+  --radius-lg:    14px;
+  --radius-xl:    20px;
+  --radius-full:  9999px;
+
+  // Shadows
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md:    0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg:    0 12px 32px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06);
+  --shadow-xl:    0 24px 48px rgba(0,0,0,0.14), 0 8px 16px rgba(0,0,0,0.08);
+
+  // Transitions
+  --transition-fast:   150ms ease;
+  --transition-base:   220ms ease;
+  --transition-slow:   350ms ease;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+
+  &:hover { color: var(--color-primary-hover); }
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, textarea, select {
+  outline: none;
+}
+
+// Visually hidden (accessibility)
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// Spinner animation
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+// View transition
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.25s;
+}
